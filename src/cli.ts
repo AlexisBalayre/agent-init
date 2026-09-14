@@ -6,7 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { SUPPORTED_TOOLS, detectStacks, detectTools, gitState, hasJq, type Tool } from "./detect.utils.js";
 import { apply, describe } from "./apply.utils.js";
-import { buildPlan } from "./plan.utils.js";
+import { PACKS, buildPlan, type Pack } from "./plan.utils.js";
 
 const TEMPLATES = fileURLToPath(new URL("../templates", import.meta.url));
 
@@ -18,6 +18,7 @@ Usage
 
 Options
   --tools <list>     Comma-separated: ${SUPPORTED_TOOLS.join(", ")} (default: detected)
+  --packs <list>     Skill packs to install: ${Object.keys(PACKS).join(", ")} (default: none)
   --dir <path>       Target repository (default: cwd)
   --no-symlink       Copy shared content instead of symlinking it
   --skip-hooks       Scaffold content but wire no hooks
@@ -33,6 +34,7 @@ type Options = {
   command: "init" | "doctor";
   dir: string;
   tools?: Tool[];
+  packs: Pack[];
   symlink: boolean;
   hooks: boolean;
   dryRun: boolean;
@@ -46,6 +48,7 @@ function parse(argv: string[]): Options | { error: string } {
   const options: Options = {
     command: "init",
     dir: process.cwd(),
+    packs: [],
     symlink: true,
     hooks: true,
     dryRun: false,
@@ -67,6 +70,14 @@ function parse(argv: string[]): Options | { error: string } {
       case "--json": options.json = true; break;
       case "--force": options.force = true; break;
       case "--dir": options.dir = path.resolve(argv[++i] ?? "."); break;
+      case "--packs": {
+        const value = argv[++i] ?? "";
+        const requested = value.split(",").map((p) => p.trim()).filter(Boolean);
+        const unknown = requested.filter((p) => !(p in PACKS));
+        if (unknown.length > 0) return { error: `Unknown pack(s): ${unknown.join(", ")}` };
+        options.packs = requested as Pack[];
+        break;
+      }
       case "--tools": {
         const value = argv[++i] ?? "";
         const requested = value.split(",").map((t) => t.trim()).filter(Boolean);
@@ -108,6 +119,7 @@ async function init(options: Options): Promise<number> {
     root, templates: TEMPLATES, tools, stacks,
     symlink: options.symlink, hooks: options.hooks,
     confirmed: interactive,
+    packs: options.packs,
   });
 
   if (options.json) {

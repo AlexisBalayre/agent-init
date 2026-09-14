@@ -62,7 +62,24 @@ Skills need no translation: all five follow the Anthropic Agent Skills spec. Hoo
 names its events differently, and Mistral Vibe denies by printing JSON rather than by exit code —
 so shared policies are written once and a per-tool adapter speaks each host's protocol.
 
-Agents and the skill packs (`thinking`, `engineering`, `review`) land in v0.3.
+## Skill packs
+
+Skills are opt-in and off by default:
+
+```bash
+npx agent-init --packs thinking,engineering
+```
+
+| Pack | Skills |
+| :-- | :-- |
+| `thinking` | `grilling`, `codebase-design`, `domain-modeling`, `prototype`, `handoff`, `zoom-out`, `write-a-skill` |
+| `engineering` | `tdd`, `diagnose`, `resolve-merge-conflicts` |
+
+They install once into `.agents/skills/`, where three of the five tools find them with no further
+wiring. Each is written against no particular stack: where a skill needs project conventions, a
+task runner or a tracker, it asks the project rather than assuming one.
+
+A `review` pack, and the subagents it dispatches, land next.
 
 **Prerequisites:** Node >= 20 to run the scaffolder, `jq` and bash >= 3.2 on any machine where the
 hooks run.
@@ -80,6 +97,7 @@ agent-init [init]      Scaffold .agents/ and wire each detected tool
 agent-init doctor      Probe the wiring and verify hooks actually block
 
 --tools <list>     claude-code, opencode, codex, mistral-vibe, cursor (default: detected)
+--packs <list>     thinking, engineering (default: none)
 --dir <path>       Target repository (default: cwd)
 --no-symlink       Copy shared content instead of symlinking it
 --skip-hooks       Scaffold content but wire no hooks

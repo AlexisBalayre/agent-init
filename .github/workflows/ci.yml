@@ -23,4 +23,6 @@ jobs:
       - uses: actions/checkout@v4
       # The whole emitted product is shell. This is the cheapest real-bug catcher we have.
       - run: sudo apt-get update && sudo apt-get install -y shellcheck
-      - run: shellcheck -s bash templates/agents/hooks/policies/*.sh templates/agents/hooks/adapters/*.sh
+      - run: shellcheck -s bash templates/agents/hooks/policies/*.sh templates/agents/hooks/adapters/*.sh scripts/*.sh
+      # Shipped content lands in strangers' repositories; a leak there is public and permanent.
+      - run: ./scripts/audit-templates.sh
