@@ -14,7 +14,17 @@ export type Action =
 export const PACKS = {
   thinking: ["grilling", "codebase-design", "domain-modeling", "handoff", "prototype", "zoom-out", "write-a-skill"],
   engineering: ["tdd", "diagnose", "resolve-merge-conflicts"],
+  review: ["review-changes", "address-review-comments"],
 } as const;
+
+/** The review pack dispatches named subagents, which only three of the five hosts support. */
+const PACKS_NEEDING_AGENTS: Pack[] = ["review"];
+
+const AGENT_DIRS: Partial<Record<Tool, string>> = {
+  "claude-code": ".claude/agents",
+  opencode: ".opencode/agent",
+  cursor: ".cursor/agents",
+};
 
 export type Pack = keyof typeof PACKS;
 
@@ -170,6 +180,25 @@ export function buildPlan(options: PlanOptions): Action[] {
     content: `# Skills\n\nOne directory per skill, each with a \`SKILL.md\` carrying \`name\` and \`description\`\nfrontmatter (the Anthropic Agent Skills spec).\n\nCodex, opencode and Mistral Vibe read this path natively. Claude Code and Cursor reach it\nthrough a symlink.\n`,
   });
 
+  const wantsAgents = packs.some((pack) => PACKS_NEEDING_AGENTS.includes(pack));
+  if (wantsAgents) {
+    actions.push({ kind: "copy-dir", target: ".agents/agents", from: path.join(templates, "agents/agents") });
+    for (const tool of tools) {
+      const dir = AGENT_DIRS[tool];
+      if (!dir) {
+        // Vibe's agents are user-global launch profiles and Codex embeds them in config:
+        // neither is a like-for-like target, so nothing is emitted and the skill degrades.
+        actions.push({ kind: "skip", target: `${tool} agents`, reason: "no project-scoped subagents; review-changes degrades to inline briefs" });
+        continue;
+      }
+      actions.push(
+        symlink
+          ? { kind: "symlink", target: dir, to: relativeToAgents(dir) }
+          : { kind: "copy-dir", target: dir, from: abs(".agents/agents") },
+      );
+    }
+  }
+
   for (const pack of packs) {
     for (const skill of PACKS[pack]) {
       actions.push({
@@ -229,6 +258,12 @@ export function buildPlan(options: PlanOptions): Action[] {
   }
 
   return actions;
+}
+
+/** Depth-aware link target: `.claude/agents` needs `../.agents/agents`. */
+function relativeToAgents(dir: string): string {
+  const depth = dir.split("/").length - 1;
+  return `${"../".repeat(depth)}.agents/agents`;
 }
 
 function spliceOrCreate(_root: string, target: string, body: string): Action {
