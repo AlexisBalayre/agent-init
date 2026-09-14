@@ -147,6 +147,50 @@ async function init(options: Options): Promise<number> {
 
 type Check = { name: string; ok: boolean; detail: string };
 
+/** A payload shaped like the host's own, carrying a command git-safety must refuse. */
+const PROBE_COMMAND = ["git", "push", "--force", "origin", "main"].join(" ");
+
+type Probe = { adapter: string; payload: (root: string) => unknown; blocked: (status: number | null, stdout: string) => boolean };
+
+const PROBES: Partial<Record<Tool, Probe>> = {
+  "claude-code": {
+    adapter: "claude-code.sh",
+    payload: (root) => ({ hook_event_name: "PreToolUse", tool_name: "Bash", cwd: root, tool_input: { command: PROBE_COMMAND } }),
+    blocked: (status) => status === 2,
+  },
+  codex: {
+    adapter: "codex.sh",
+    payload: (root) => ({ hook_event_name: "PreToolUse", tool_name: "Bash", cwd: root, tool_input: { command: PROBE_COMMAND } }),
+    blocked: (status) => status === 2,
+  },
+  cursor: {
+    adapter: "cursor.sh",
+    payload: (root) => ({ hook_event_name: "beforeShellExecution", command: PROBE_COMMAND, cwd: root, workspace_roots: [root] }),
+    blocked: (status) => status === 2,
+  },
+  // Vibe denies by exiting 0 and printing a decision, so a zero exit proves nothing here.
+  "mistral-vibe": {
+    adapter: "mistral-vibe.sh",
+    payload: (root) => ({ hook_event_name: "pre_tool", tool_name: "shell", cwd: root, tool_input: { command: PROBE_COMMAND } }),
+    blocked: (status, stdout) => {
+      if (status !== 0) return false;
+      try {
+        return (JSON.parse(stdout) as { decision?: string }).decision === "deny";
+      } catch {
+        return false;
+      }
+    },
+  },
+};
+
+const WIRING: Record<Tool, { file: string; needle: string }> = {
+  "claude-code": { file: ".claude/settings.json", needle: ".agents/hooks/adapters" },
+  opencode: { file: ".opencode/plugins/agent-init.js", needle: "" },
+  codex: { file: ".codex/config.toml", needle: ".agents/hooks/adapters" },
+  "mistral-vibe": { file: ".vibe/hooks.toml", needle: ".agents/hooks/adapters" },
+  cursor: { file: ".cursor/hooks.json", needle: ".agents/hooks/adapters" },
+};
+
 function doctor(options: Options): number {
   const root = gitState(options.dir).root ?? options.dir;
   // Only tools the project actually uses are checked: reporting a missing plugin for a
@@ -154,49 +198,40 @@ function doctor(options: Options): number {
   const tools = options.tools ?? detectTools(root);
   const checks: Check[] = [];
 
-  checks.push({ name: "jq", ok: hasJq(), detail: hasJq() ? "installed" : "missing — hook policies cannot run" });
+  const jq = hasJq();
+  checks.push({ name: "jq", ok: jq, detail: jq ? "installed" : "missing — hook policies cannot run" });
 
-  const adapter = path.join(root, ".agents/hooks/adapters/claude-code.sh");
-  const wired = existsSync(adapter);
-  checks.push({ name: ".agents/hooks", ok: wired, detail: wired ? "present" : "not scaffolded" });
+  const hooksDir = existsSync(path.join(root, ".agents/hooks"));
+  checks.push({ name: ".agents/hooks", ok: hooksDir, detail: hooksDir ? "present" : "not scaffolded" });
 
-  if (wired && hasJq() && tools.includes("claude-code")) {
+  if (tools.length === 0) checks.push({ name: "tools", ok: false, detail: "no supported tool detected here" });
+
+  for (const tool of tools) {
+    const wiring = WIRING[tool];
+    const file = path.join(root, wiring.file);
+    const wired = existsSync(file) && (wiring.needle === "" || readFileSync(file, "utf8").includes(wiring.needle));
+    checks.push({ name: `${tool} wiring`, ok: wired, detail: wired ? `wired in ${wiring.file}` : `not wired in ${wiring.file}` });
+
+    const probe = PROBES[tool];
+    if (!probe) {
+      checks.push({ name: `${tool} blocking`, ok: true, detail: "not probed: needs a live session" });
+      continue;
+    }
+    if (!hooksDir || !jq) continue;
+
+    const adapter = path.join(root, ".agents/hooks/adapters", probe.adapter);
     // The only check that matters: a hook that fails to block exits 0 and looks healthy.
-    const command = ["git", "push", "--force", "origin", "main"].join(" ");
-    const probe = spawnSync("bash", [adapter, "git-safety"], {
-      input: JSON.stringify({ hook_event_name: "PreToolUse", tool_name: "Bash", cwd: root, tool_input: { command } }),
+    const result = spawnSync("bash", [adapter, "git-safety"], {
+      input: JSON.stringify(probe.payload(root)),
       encoding: "utf8",
       env: { ...process.env, CLAUDE_PROJECT_DIR: root },
     });
+    const blocked = probe.blocked(result.status, result.stdout ?? "");
     checks.push({
-      name: "claude-code blocking",
-      ok: probe.status === 2,
-      detail: probe.status === 2 ? "probe blocked as expected" : `probe returned ${probe.status}; hooks are NOT blocking`,
+      name: `${tool} blocking`,
+      ok: blocked,
+      detail: blocked ? "probe blocked as expected" : "probe was NOT blocked — this hook is not protecting you",
     });
-  }
-
-  if (tools.includes("claude-code")) {
-    const settings = path.join(root, ".claude/settings.json");
-    const settingsWired = existsSync(settings) && readFileSync(settings, "utf8").includes(".agents/hooks/adapters");
-    checks.push({
-      name: "claude-code settings",
-      ok: settingsWired,
-      detail: settingsWired ? "hooks wired" : "no agent-init hooks found in .claude/settings.json",
-    });
-  }
-
-  if (tools.includes("opencode")) {
-    const plugin = path.join(root, ".opencode/plugins/agent-init.js");
-    const pluginWired = existsSync(plugin);
-    checks.push({
-      name: "opencode plugin",
-      ok: pluginWired,
-      detail: pluginWired ? "present (not probed: needs a live opencode session)" : "not installed",
-    });
-  }
-
-  if (tools.length === 0) {
-    checks.push({ name: "tools", ok: false, detail: "no supported tool detected here" });
   }
 
   if (options.json) {
@@ -204,7 +239,7 @@ function doctor(options: Options): number {
   } else {
     process.stdout.write(`agent-init doctor -> ${root}\n\n`);
     for (const check of checks) {
-      process.stdout.write(`  ${check.ok ? "ok  " : "FAIL"}  ${check.name.padEnd(22)}${check.detail}\n`);
+      process.stdout.write(`  ${check.ok ? "ok  " : "FAIL"}  ${check.name.padEnd(24)}${check.detail}\n`);
     }
     process.stdout.write("\n");
   }
