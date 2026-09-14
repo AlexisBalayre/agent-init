@@ -47,6 +47,24 @@ Agent Skills spec, and `.agents/skills/` is already read natively by two of them
 | **Core plus opt-in packs** | `--packs thinking,engineering,review`. |
 | **Honest tiers** | What a tool cannot do is documented, not emulated. |
 
+## Support matrix
+
+v0.1 targets two tools that bracket the difficulty — one with rich shell hooks, one with no shell
+hooks at all. If the contract holds across both, the rest are variations.
+
+| Tool | Memory | Skills | Hooks | Agents | Status |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| Claude Code | yes | symlink | 3 events | symlink | v0.1 |
+| opencode | native | native | JS plugin shim | symlink | v0.1 |
+| Codex | native | symlink | `hooks.json` | none | v0.2 |
+| Mistral Vibe | native | native | `hooks.toml` | none | v0.2 |
+| Cursor | native | symlink | `hooks/hooks.json` | symlink | v0.2 |
+
+Skill packs (`thinking`, `engineering`, `review`) land in v0.3.
+
+**Prerequisites:** Node >= 20 to run the scaffolder, `jq` and bash >= 3.2 on any machine where the
+hooks run.
+
 ## Install safety
 
 Refuses a dirty git tree without `--force` — git is the backup. Existing markdown is edited only

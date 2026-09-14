@@ -37,7 +37,8 @@ Neither holds for agents. See decision 8 in [`design/0001-architecture.md`](desi
 
 ## Known gaps
 
-- **opencode has no shell hooks.** A small JS plugin shells out to the shared adapters.
+- **opencode has no shell hooks.** A small JS plugin shells out to the shared adapters. Verified
+  2026-09-14: `tool.execute.before` blocks a tool call by throwing, so the shim can throw on exit 2.
 - **Blocking semantics differ per tool** and are the highest-risk part of the port. A hook that
   fails to block exits 0 and looks healthy; `agent-init doctor` exists to catch exactly this.
 - **Claude-only:** `PreCompact`, the comment-pruner dispatch, and `Use PROACTIVELY` auto-dispatch
@@ -62,3 +63,4 @@ Neither holds for agents. See decision 8 in [`design/0001-architecture.md`](desi
 - Mistral Vibe — https://github.com/mistralai/mistral-vibe
 - Cursor rules — https://cursor.com/docs/rules
 - Cursor plugins — https://cursor.com/docs/reference/plugins
+- opencode plugins — https://opencode.ai/docs/plugins/
