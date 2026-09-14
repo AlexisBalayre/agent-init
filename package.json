@@ -5,16 +5,37 @@
   "type": "module",
   "license": "MIT",
   "author": "Alexis Balayre",
-  "repository": { "type": "git", "url": "git+https://github.com/AlexisBalayre/agent-init.git" },
-  "keywords": ["agents", "AGENTS.md", "claude-code", "codex", "opencode", "mistral-vibe", "cursor", "skills", "hooks"],
-  "engines": { "node": ">=20" },
-  "bin": { "agent-init": "dist/cli.js" },
-  "files": ["dist", "templates"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlexisBalayre/agent-init.git"
+  },
+  "keywords": [
+    "agents",
+    "AGENTS.md",
+    "claude-code",
+    "codex",
+    "opencode",
+    "mistral-vibe",
+    "cursor",
+    "skills",
+    "hooks"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "agent-init": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm test"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

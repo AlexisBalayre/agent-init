@@ -50,5 +50,15 @@ export const AgentInit = async ({ directory, worktree }) => {
 
       runPolicy("post-edit", { AGENT_EVENT: "post-edit", AGENT_FILES: file }, projectDir);
     },
+
+    // opencode's turn-end. Nothing can be blocked once the turn is over, so a failing
+    // gate is reported rather than enforced: unlike Claude Code's Stop hook, there is no
+    // documented way to feed the output back into the agent's context.
+    event: async ({ event }) => {
+      if (event?.type !== "session.idle") return;
+
+      const { blocked, reason } = runPolicy("quality-gate", { AGENT_EVENT: "turn-end" }, projectDir);
+      if (blocked && reason) console.error(`agent-init quality gate:\n${reason}`);
+    },
   };
 };
