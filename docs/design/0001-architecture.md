@@ -251,3 +251,32 @@ not yet a guard.
 The audit that motivated it found no employer secrets in the ported set — the three hits were a
 generic mention of a well-known CI tool, a fictional org in an example URL, and two config *key*
 names. The genuinely sensitive skills were excluded from the port at decision 7 and remain excluded.
+
+## 16. The review pack, and two skills that could not travel
+
+The `review` pack ships seven reviewer subagents, a `review-changes` orchestrator and
+`address-review-comments`. Agents install to `.agents/agents/` and are symlinked into Claude Code,
+opencode and Cursor; Codex and Mistral Vibe get nothing, and the orchestrator carries a documented
+degradation path so the review loses its mechanism rather than its existence.
+
+Frontmatter is stripped to `name` and `description` on the way in, per decision 8. `tools` and
+`model` are dropped: Claude's list and opencode's map are incompatible, and unlike skills, agents
+are not documented to ignore unknown keys.
+
+**Two skills were dropped rather than ported, and the reason is the same for both: their data
+source does not exist outside the originating repository.**
+
+- `pr-ci-review` presumes a private GitHub action — a preflight that supplies the review mode, a
+  config-restore step, records committed to a metrics branch, and a poster that renders a JSON
+  record onto the PR. Roughly a third of the skill addresses that harness. What shipped instead is
+  `review-changes`: the same roster, gating, briefing and consolidation discipline, with the CI
+  machinery removed and a name that does not promise a pipeline.
+- `review-retro` mines the records that pipeline produces. With no records, it has nothing to read.
+
+Shipping either as-is would have produced a skill that reads plausibly and cannot work — the
+failure mode this project has rejected at every other decision.
+
+**The leak audit caught something the manual pass missed.** A reviewer manifest carried an
+`(ACME-XXXX)` example token and a `core.md` reference on a line my case-sensitive grep skipped. The
+script is case-insensitive and ran on every file, which is the entire argument for decision 15: a
+check that runs is worth more than an intention that is careful.
