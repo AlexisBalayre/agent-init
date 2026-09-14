@@ -58,6 +58,11 @@ Normalised events, capped at three: `pre-tool:bash`, `post-edit`, `turn-end`.
   shells out. A hook that silently fails to block is worse than no hook.
 - **Not ported:** anything without a counterpart (Claude's `PreCompact`, the comment-pruner
   dispatch) stays Claude-only and is documented as such.
+- **False positives are preferred to bypasses.** `git-safety` matches the raw command text, so a
+  command merely *containing* a dangerous pattern as data — a heredoc documenting one, a `grep`
+  for it — is blocked. Parsing shell instead would mean a parser that can disagree with the user's
+  actual shell, and a disagreement there is a bypass rather than an inconvenience. Confirmed the
+  hard way while building this: writing these very policies through a shell heredoc tripped them.
 
 ## 5. Stack-agnostic quality gate
 
