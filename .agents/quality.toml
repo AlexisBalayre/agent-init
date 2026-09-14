@@ -1,0 +1,7 @@
+# This repository's own gate. It is dogfood: agent-init works on itself, so a policy
+# that breaks breaks our loop first. No linter is configured yet, hence typecheck only.
+
+[[gate]]
+paths = ""
+files = '\.ts$'
+typecheck = "npx tsc --noEmit"

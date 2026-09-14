@@ -33,7 +33,8 @@ three times, a hook wired four ways, a convention updated in one file and stale 
 
 Two facts make this work, both verified in
 [`docs/capability-matrix.md`](docs/capability-matrix.md): all five tools follow the Anthropic
-Agent Skills spec, and `.agents/skills/` is already read natively by two of them.
+Agent Skills spec, and `.agents/skills/` is already read natively by **three of them** — Codex,
+opencode and Mistral Vibe. Only Claude Code and Cursor need the symlink.
 
 ## Design in one table
 
@@ -56,7 +57,7 @@ hooks at all. If the contract holds across both, the rest are variations.
 | :-- | :-- | :-- | :-- | :-- | :-- |
 | Claude Code | yes | symlink | 3 events | symlink | v0.1 |
 | opencode | native | native | JS plugin shim | symlink | v0.1 |
-| Codex | native | symlink | `hooks.json` | none | v0.2 |
+| Codex | native | native | `hooks.json` | none | v0.2 |
 | Mistral Vibe | native | native | `hooks.toml` | none | v0.2 |
 | Cursor | native | symlink | `hooks/hooks.json` | symlink | v0.2 |
 

@@ -1,0 +1,22 @@
+# Quality gate — read by .agents/hooks/policies/quality-gate.sh at turn-end.
+#
+# Use single-quoted TOML literal strings for regexes: escapes are not interpreted.
+# One [[gate]] block per stack. A missing or empty value skips that step; a file with
+# no gates is a silent no-op. Only `key = "value"` string entries are supported.
+#
+#   paths      regex matched against the START of a changed path (omit = whole repo)
+#   files      regex the changed file must match
+#   lint_fix   run first; receives matched files as arguments
+#   lint       must exit 0; receives matched files as arguments; non-zero blocks the turn
+#   typecheck  run once, no arguments
+#
+# agent-init pre-fills these from repo detection. Anything it inferred without your
+# confirmation is left commented out on purpose: a gate you believe is running but
+# is not is worse than one that is obviously unfinished.
+
+[[gate]]
+paths = ""
+files = '\.(ts|tsx)$'
+# lint_fix  = "pnpm exec biome check --write"
+# lint      = "pnpm exec biome check"
+# typecheck = "pnpm typecheck"

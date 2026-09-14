@@ -12,7 +12,7 @@ move fast; treat any row older than a release cycle as unverified.
 | **Claude Code** | `CLAUDE.md` importing `@AGENTS.md` | `.claude/skills/<name>/SKILL.md` | `.claude/settings.json` (shell commands) | `.claude/agents/*.md` |
 | **opencode** | `AGENTS.md` native | `.agents/skills/`, `.claude/skills/`, `.opencode/skills/` — all native | JS plugins only | `.opencode/agent/*.md` |
 | **Mistral Vibe** | `AGENTS.md` native | `.agents/skills/`, `.vibe/skills/`, plus `skill_paths` in config | `.vibe/hooks.toml` (`pre_tool`, `post_tool`, `post_agent`) | `~/.vibe/agents/*.toml` (user-global) |
-| **Codex** | `AGENTS.md` native | supported; project path not documented | `.codex/hooks.json` or `[hooks]` in `.codex/config.toml` | `[agents]` in `config.toml` |
+| **Codex** | `AGENTS.md` native | `.agents/skills/` native, scanned CWD -> repo root; also `.codex/skills/` | `.codex/hooks.json` or `[hooks]` in `.codex/config.toml` | `[agents]` in `config.toml` |
 | **Cursor** | `AGENTS.md` native, plus `.cursor/rules/*.mdc` | `.cursor/skills/` | `hooks/hooks.json` | subagents (2026) |
 
 ## The two findings the design rests on
@@ -20,8 +20,10 @@ move fast; treat any row older than a release cycle as unverified.
 1. **`SKILL.md` is a de facto standard.** All five follow the Anthropic Agent Skills spec: `name`
    and `description` frontmatter, unknown fields ignored. Shipped skills need no format
    translation — only placement.
-2. **`.agents/skills/` is already a neutral cross-tool convention.** opencode and Mistral Vibe both
-   read it natively, without configuration.
+2. **`.agents/skills/` is already a neutral cross-tool convention.** opencode, Mistral Vibe **and
+   Codex** all read it natively, without configuration — three of the five. Codex scans
+   `.agents/skills` in every directory from the working directory up to the repository root. Only
+   Claude Code and Cursor need the symlink.
 
 Neither holds for agents. See decision 8 in [`design/0001-architecture.md`](design/0001-architecture.md).
 
@@ -32,7 +34,7 @@ Neither holds for agents. See decision 8 in [`design/0001-architecture.md`](desi
 | **Claude Code** | `CLAUDE.md` -> `@AGENTS.md` | symlink | full (3 events) | symlink |
 | **opencode** | native | native, nothing emitted | JS plugin shim | symlink |
 | **Mistral Vibe** | native | native, nothing emitted | `hooks.toml` managed block | none in v1 |
-| **Codex** | native | symlink | `hooks.json` | none in v1 |
+| **Codex** | native | native, nothing emitted | `hooks.json` | none in v1 |
 | **Cursor** | native | symlink | `hooks/hooks.json` | symlink |
 
 ## Known gaps
@@ -63,4 +65,5 @@ Neither holds for agents. See decision 8 in [`design/0001-architecture.md`](desi
 - Mistral Vibe — https://github.com/mistralai/mistral-vibe
 - Cursor rules — https://cursor.com/docs/rules
 - Cursor plugins — https://cursor.com/docs/reference/plugins
+- Codex skills — https://learn.chatgpt.com/docs/build-skills
 - opencode plugins — https://opencode.ai/docs/plugins/
