@@ -8,6 +8,7 @@ brackets the difficulty against Claude Code's rich ones. A contract satisfying b
 **Verified 2026-09-14:** `tool.execute.before` aborts a tool call by throwing, so exit 2 from a
 shared policy becomes a thrown `Error` carrying the policy's stderr.
 
-**Not wired:** `turn-end`. opencode's session-level event names are unverified, and inventing one
-would silently do nothing — the failure mode this project exists to avoid. The quality gate is
-Claude Code-only until that is confirmed.
+**`turn-end`** maps to the `session.idle` event (verified 2026-09-14). One asymmetry that is not
+worked around: by the time the turn is over there is nothing left to block, and opencode offers no
+documented way to feed hook output back into the agent's context, so a failing gate is *reported*
+on stderr here where Claude Code's `Stop` hook can force the agent to fix it.

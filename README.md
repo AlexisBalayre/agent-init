@@ -1,7 +1,8 @@
 # agent-init
 
-> **Status: early. Design settled, implementation in progress.** Nothing here is published to npm
-> yet. The architecture is recorded in [`docs/design/0001-architecture.md`](docs/design/0001-architecture.md).
+> **Status: v0.1 works for Claude Code and opencode.** Not yet published to npm — run it from a
+> clone for now. The architecture is recorded in
+> [`docs/design/0001-architecture.md`](docs/design/0001-architecture.md).
 
 One command to give a repository a shared agent setup that **Claude Code, Codex, opencode, Mistral
 Vibe, and Cursor all read** — conventions, skills, and deterministic hooks, stored once.
@@ -71,6 +72,26 @@ hooks run.
 Refuses a dirty git tree without `--force` — git is the backup. Existing markdown is edited only
 between `<!-- agent-init:start -->` markers. JSON config is deep-merged, never clobbered. TOML gets
 a text-spliced managed block so comments survive. Re-runs are idempotent.
+
+## Usage
+
+```
+agent-init [init]      Scaffold .agents/ and wire each detected tool
+agent-init doctor      Probe the wiring and verify hooks actually block
+
+--tools <list>     claude-code, opencode (default: detected)
+--dir <path>       Target repository (default: cwd)
+--no-symlink       Copy shared content instead of symlinking it
+--skip-hooks       Scaffold content but wire no hooks
+--dry-run          Print the plan, write nothing
+--yes              Apply without confirming
+--json             Machine-readable output
+--force            Proceed even though the git tree is dirty
+```
+
+Every prompt has a flag, so an interactive run is always reproducible as one command — and an
+agent driving the CLI never hits a prompt that hangs. Without a TTY and without `--yes`, `init`
+prints its plan and exits non-zero rather than guessing.
 
 ## Verify it actually works
 
