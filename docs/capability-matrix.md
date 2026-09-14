@@ -67,19 +67,25 @@ Neither holds for agents. See decision 8 in [`design/0001-architecture.md`](desi
 - **Codex `Stop` wiring is inferred.** The documented example covers `[[hooks.PreToolUse]]`; the
   `Stop` block follows the same documented shape but has not been confirmed against a running
   Codex.
+- **Three of five have never been run against.** Codex, opencode and Cursor wiring is derived from
+  their documentation and has not been observed working. Vibe's has: its own loader accepts the
+  emitted `hooks.toml` in strict mode, asserted by a test that skips where Vibe is absent.
 - **Mistral Vibe agents are user-global launch profiles**, not project-scoped dispatched
   subagents. Not a like-for-like target, so nothing is emitted.
 - **Claude-only:** `PreCompact`, the comment-pruner dispatch, and `Use PROACTIVELY` auto-dispatch.
 
 ## Verified against
 
-| Tool | Version | Date | Source |
+| Tool | Version checked | Date | How |
 | :-- | :-- | :-- | :-- |
-| Claude Code | _tbd_ | 2026-09-14 | docs |
-| opencode | _tbd_ | 2026-09-14 | docs |
-| Codex | _tbd_ | 2026-09-14 | docs |
-| Mistral Vibe | _tbd_ | 2026-09-14 | source (`vibe/core/hooks/`) |
-| Cursor | _tbd_ | 2026-09-14 | docs |
+| Claude Code | **2.1.270** | 2026-09-14 | docs, plus this repo dogfoods the emitted wiring daily |
+| Mistral Vibe | **2.25.3** | 2026-09-14 | source, plus the emitted `hooks.toml` parsed by Vibe's own strict loader |
+| Codex | not installed | 2026-09-14 | docs only |
+| opencode | not installed | 2026-09-14 | docs only |
+| Cursor | not installed | 2026-09-14 | docs only |
+
+"Docs only" means nobody has yet run `agent-init` against that tool and watched a hook fire. The
+rows are honest about which claims are tested and which are read.
 
 ## Sources
 
