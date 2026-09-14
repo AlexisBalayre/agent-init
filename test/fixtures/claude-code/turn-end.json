@@ -1,0 +1,6 @@
+{
+  "session_id": "fixture",
+  "cwd": "/tmp/agent-init-fixture",
+  "hook_event_name": "Stop",
+  "stop_hook_active": false
+}
