@@ -158,3 +158,29 @@ describe("doctor probes every adapter it can", () => {
     expect(stdout).not.toContain("NOT blocked");
   });
 });
+
+describe("skill packs", () => {
+  it("installs nothing by default", () => {
+    runCli(["--dir", repo, "--yes"]);
+    expect(existsSync(path.join(repo, ".agents/skills/tdd"))).toBe(false);
+  });
+
+  it("installs only the requested packs", () => {
+    runCli(["--dir", repo, "--yes", "--packs", "engineering"]);
+    expect(existsSync(path.join(repo, ".agents/skills/tdd/SKILL.md"))).toBe(true);
+    expect(existsSync(path.join(repo, ".agents/skills/grilling"))).toBe(false);
+  });
+
+  it("ships skills that every tool can discover", () => {
+    runCli(["--dir", repo, "--yes", "--packs", "thinking,engineering"]);
+    const skill = readFileSync(path.join(repo, ".agents/skills/tdd/SKILL.md"), "utf8");
+    // The Agent Skills spec all five tools implement: name + description frontmatter.
+    expect(skill).toMatch(/^---\nname: tdd\ndescription: /);
+  });
+
+  it("rejects an unknown pack", () => {
+    const { status, stderr } = runCli(["--dir", repo, "--yes", "--packs", "nonsense"]);
+    expect(status).toBe(1);
+    expect(stderr).toContain("Unknown pack");
+  });
+});

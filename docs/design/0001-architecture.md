@@ -229,3 +229,25 @@ been silently unenforced on Vibe — exit 2 would have been read as a hook error
 
 `doctor` now probes four of the five with a real payload and asserts the block landed, each against
 its own convention. opencode remains unprobeable without a live session.
+
+## 15. v0.3: packs, and a CI guard instead of a promise
+
+The first two packs ship: `thinking` (7 skills) and `engineering` (3). Both are opt-in and off by
+default.
+
+De-coupling turned out far cheaper than budgeted. The measured coupling — 20 files touching
+`docs/conventions/`, 17 touching a fictional product — concentrated in a handful of *lines*, not a
+rewrite of every skill: a doc-location table, a set of domain-specific vocabulary examples, a
+generated-artifact list naming one stack's tools, and two lines of guidance in `write-a-skill`.
+Each became a question the skill asks the project instead of an answer it assumes.
+
+**The leak audit is now a script, not a promise.** `scripts/audit-templates.sh` fails CI when
+shipped content carries employer or personal fingerprints (vendor names, tracker keys, internal
+hosts) or references to the repository this content came from. Auditing by intention does not
+survive the fifth port at midnight; auditing in CI does. It was verified by planting a leak and
+watching it fail, on the same principle as every other check here: a guard nobody has seen fail is
+not yet a guard.
+
+The audit that motivated it found no employer secrets in the ported set — the three hits were a
+generic mention of a well-known CI tool, a fictional org in an example URL, and two config *key*
+names. The genuinely sensitive skills were excluded from the port at decision 7 and remain excluded.

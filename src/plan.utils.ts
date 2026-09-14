@@ -11,6 +11,13 @@ export type Action =
   | { kind: "copy"; target: string; from: string }
   | { kind: "skip"; target: string; reason: string };
 
+export const PACKS = {
+  thinking: ["grilling", "codebase-design", "domain-modeling", "handoff", "prototype", "zoom-out", "write-a-skill"],
+  engineering: ["tdd", "diagnose", "resolve-merge-conflicts"],
+} as const;
+
+export type Pack = keyof typeof PACKS;
+
 export type PlanOptions = {
   root: string;
   templates: string;
@@ -20,6 +27,7 @@ export type PlanOptions = {
   hooks: boolean;
   /** Gate commands nobody confirmed are written commented out, never silently active. */
   confirmed: boolean;
+  packs: Pack[];
 };
 
 const AGENTS_BODY = `## Agent setup
@@ -151,7 +159,7 @@ export function renderQualityToml(stacks: Stack[], confirmed: boolean): string {
 }
 
 export function buildPlan(options: PlanOptions): Action[] {
-  const { root, templates, tools, stacks, symlink, hooks, confirmed } = options;
+  const { root, templates, tools, stacks, symlink, hooks, confirmed, packs } = options;
   const actions: Action[] = [];
   const abs = (p: string) => path.join(root, p);
 
@@ -161,6 +169,16 @@ export function buildPlan(options: PlanOptions): Action[] {
     target: ".agents/skills/README.md",
     content: `# Skills\n\nOne directory per skill, each with a \`SKILL.md\` carrying \`name\` and \`description\`\nfrontmatter (the Anthropic Agent Skills spec).\n\nCodex, opencode and Mistral Vibe read this path natively. Claude Code and Cursor reach it\nthrough a symlink.\n`,
   });
+
+  for (const pack of packs) {
+    for (const skill of PACKS[pack]) {
+      actions.push({
+        kind: "copy-dir",
+        target: `.agents/skills/${skill}`,
+        from: path.join(templates, "agents/skills", skill),
+      });
+    }
+  }
 
   actions.push(
     existsSync(abs(".agents/quality.toml"))
