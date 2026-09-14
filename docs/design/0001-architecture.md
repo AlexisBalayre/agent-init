@@ -123,3 +123,80 @@ The common case is a repo that already has a `CLAUDE.md` and a `.cursor/`.
 - TOML (`.codex/config.toml`, `.vibe/config.toml`): text-splice a managed block. No parse, no
   round-trip, so comments and key ordering survive.
 - **Cost accepted:** TOML conflict detection degrades to "the managed block exists and differs".
+
+## 10. Dual-mode CLI, flag-complete
+
+A large share of installs will be an agent running the command, not a human. Interactive prompts
+render ANSI, block on a TTY, and hang in a subprocess.
+
+Interactive only when stdin is a TTY **and** no flags were passed. Otherwise fully
+non-interactive, on detection-based defaults. Three rules:
+
+- **Flag-complete.** Every prompt has an equivalent flag, so any interactive run is reproducible as
+  a single command.
+- **Plan, then apply.** `init` prints the exact file list — created, merged, symlinked, skipped —
+  and applies on confirm. `--yes` skips the confirm, `--dry-run` never writes. Non-TTY without
+  `--yes` prints the plan and exits non-zero rather than guessing.
+- **`--json`** on `doctor` and on the plan. `doctor` output is the bug-report format; nobody should
+  parse box-drawing characters.
+
+- **Cost accepted:** the flag set is a public API from v0.1.
+- **Inferred configuration is never silently active.** A `quality.toml` command that detection
+  guessed, with nobody confirming it, is written commented-out with a `TODO`. Active only after an
+  interactive confirm or an explicit flag. A gate the user believes is running but is not belongs
+  to the same failure class as a hook that fails to block.
+
+## 11. The repository dogfoods its own output
+
+`.agents/skills` in this repo symlinks into `templates/agents/skills/`, so editing a skill while
+working here edits the shipped skill. The committed per-tool wiring is the worked example.
+
+CI runs four jobs:
+
+1. `typecheck` and `build`
+2. `vitest` — golden files, schema validation, adapter contract fixtures
+3. `agent-init init --dry-run --check` — fails when the committed tree differs from what the
+   current generator would emit. This is the integration test: free, no API keys, and it catches a
+   generator change that the demo did not follow.
+4. `shellcheck -s bash` over `templates/agents/hooks/**/*.sh`
+
+- **Cost accepted:** dogfooding exercises one stack only. Detection for Python, Go, and Rust needs
+  small fixture repos under `test/`, asserted against the detector.
+- **Cost accepted:** editing `.agents/` edits shipped content through a symlink. `CONTRIBUTING.md`
+  must say which path is canonical.
+
+## 12. bash 3.2, and `jq` is a prerequisite
+
+Emitted shell targets **bash 3.2** — the version macOS ships, and what Git Bash provides.
+`shellcheck -s bash` enforces it; bash-4-only features (associative arrays, `${var,,}`) are banned.
+POSIX `sh` was rejected: it costs `pipefail` and buys no real reach.
+
+Adapters must read JSON from stdin, and **macOS ships no `jq`**. Hand-rolled shell JSON extraction
+is rejected outright: the field being parsed is the command under guard, so a parse bug defeated by
+an embedded quote is a bypass in the hook whose only job is blocking. Where a tool exposes the same
+data as environment variables, those are preferred and `jq` is not invoked.
+
+Missing-`jq` behaviour, chosen so it can never be quiet:
+
+- `init` refuses to wire hooks, suggests the install command, and offers `--skip-hooks`.
+- `doctor` reports a hard failure.
+- If `jq` disappears later, the adapter **fails open** and writes a loud warning to stderr on every
+  invocation. Failing closed would block every Bash call in every session and read as a broken tool.
+
+## 13. v0.1 is a vertical slice: Claude Code and opencode
+
+Those two bracket the difficulty. Claude Code has rich shell hooks with matchers; opencode has no
+shell hooks at all and needs a JS plugin shim. A contract satisfying both ends generalises; one
+proven on Claude Code alone proves nothing about portability, which is the thesis.
+
+**Verified before committing to the design (2026-09-14):** opencode plugins *can* block. The
+`tool.execute.before` hook aborts a tool call by throwing, so the shim can spawn the shared adapter
+and throw on exit 2. Had it been unable to block, `git-safety` would have been Claude-only and the
+product's framing would have had to change.
+
+Sequence: **v0.1** two tools, complete stack, published early with the support matrix leading the
+README. **v0.2** Codex, Mistral Vibe, Cursor. **v0.3** the skill packs — content de-coupling should
+not block the mechanism.
+
+- **Rejected:** breadth-first across five tools with skills only (barely more than what the
+  `AGENTS.md` convention already gives away); depth-first on Claude Code; all five at once.
