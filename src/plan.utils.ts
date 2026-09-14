@@ -67,6 +67,46 @@ const claudeHooks = (hooks: boolean) =>
       }
     : {};
 
+
+const REPO_ROOT_CMD = '"$(git rev-parse --show-toplevel)"';
+
+const codexHooks = `[[hooks.PreToolUse]]
+matcher = "^(Bash|shell)$"
+
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = '${REPO_ROOT_CMD}/.agents/hooks/adapters/codex.sh git-safety'
+timeout = 5
+
+[[hooks.Stop]]
+
+[[hooks.Stop.hooks]]
+type = "command"
+command = '${REPO_ROOT_CMD}/.agents/hooks/adapters/codex.sh quality-gate'
+timeout = 300`;
+
+// `match` is only valid on tool hooks, so post_agent must omit it.
+const vibeHooks = `[[hooks]]
+name = "agent-init-git-safety"
+type = "pre_tool"
+match = "*"
+command = '${REPO_ROOT_CMD}/.agents/hooks/adapters/mistral-vibe.sh git-safety'
+timeout = 5
+
+[[hooks]]
+name = "agent-init-quality-gate"
+type = "post_agent"
+command = '${REPO_ROOT_CMD}/.agents/hooks/adapters/mistral-vibe.sh quality-gate'
+timeout = 300`;
+
+const cursorHooks = {
+  version: 1,
+  hooks: {
+    beforeShellExecution: [{ command: "./.agents/hooks/adapters/cursor.sh git-safety" }],
+    stop: [{ command: "./.agents/hooks/adapters/cursor.sh quality-gate" }],
+  },
+};
+
 export function renderQualityToml(stacks: Stack[], confirmed: boolean): string {
   const header = `# Quality gate — read by .agents/hooks/policies/quality-gate.sh at turn-end.
 #
@@ -138,6 +178,25 @@ export function buildPlan(options: PlanOptions): Action[] {
         ? { kind: "symlink", target: ".claude/skills", to: "../.agents/skills" }
         : { kind: "copy-dir", target: ".claude/skills", from: abs(".agents/skills") },
     );
+  }
+
+  if (tools.includes("codex")) {
+    actions.push({ kind: "skip", target: ".codex/skills", reason: "codex reads .agents/skills natively" });
+    if (hooks) actions.push({ kind: "splice", target: ".codex/config.toml", content: codexHooks, toml: true });
+  }
+
+  if (tools.includes("mistral-vibe")) {
+    actions.push({ kind: "skip", target: ".vibe/skills", reason: "mistral-vibe reads .agents/skills natively" });
+    if (hooks) actions.push({ kind: "splice", target: ".vibe/hooks.toml", content: vibeHooks, toml: true });
+  }
+
+  if (tools.includes("cursor")) {
+    actions.push(
+      symlink
+        ? { kind: "symlink", target: ".cursor/skills", to: "../.agents/skills" }
+        : { kind: "copy-dir", target: ".cursor/skills", from: abs(".agents/skills") },
+    );
+    if (hooks) actions.push({ kind: "merge-json", target: ".cursor/hooks.json", value: cursorHooks });
   }
 
   if (tools.includes("opencode")) {
