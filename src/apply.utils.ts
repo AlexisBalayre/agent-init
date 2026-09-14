@@ -1,7 +1,7 @@
 import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type { Action } from "./plan.utils.js";
-import { deepMerge, hasManagedBlock, spliceManagedBlock } from "./managed-block.utils.js";
+import { deepMerge, hasManagedBlock, spliceManagedBlock, tomlComment } from "./managed-block.utils.js";
 
 export type Applied = { target: string; outcome: string };
 
@@ -35,11 +35,12 @@ function applyOne(action: Action, root: string): string {
     }
 
     case "splice": {
+      const comment = action.toml ? tomlComment : undefined;
       const existing = existsSync(target) ? readFileSync(target, "utf8") : "";
-      const updated = spliceManagedBlock(existing, action.content);
+      const updated = spliceManagedBlock(existing, action.content, comment);
       if (updated === existing) return "unchanged";
       write(target, updated);
-      return hasManagedBlock(existing) ? "block updated" : existing ? "block added" : "created";
+      return hasManagedBlock(existing, comment) ? "block updated" : existing ? "block added" : "created";
     }
 
     case "merge-json": {

@@ -1,7 +1,6 @@
 # agent-init
 
-> **Status: v0.1 works for Claude Code and opencode.** Not yet published to npm — run it from a
-> clone for now. The architecture is recorded in
+> **Status: all five tools wired.** Not yet published to npm — run it from a clone for now. The architecture is recorded in
 > [`docs/design/0001-architecture.md`](docs/design/0001-architecture.md).
 
 One command to give a repository a shared agent setup that **Claude Code, Codex, opencode, Mistral
@@ -51,18 +50,19 @@ opencode and Mistral Vibe. Only Claude Code and Cursor need the symlink.
 
 ## Support matrix
 
-v0.1 targets two tools that bracket the difficulty — one with rich shell hooks, one with no shell
-hooks at all. If the contract holds across both, the rest are variations.
+| Tool | Memory | Skills | Hooks | Blocking verified by `doctor` |
+| :-- | :-- | :-- | :-- | :-- |
+| Claude Code | `CLAUDE.md` -> `AGENTS.md` | symlink | `settings.json` | yes |
+| Codex | native | native | `config.toml` block | yes |
+| Cursor | native | symlink | `hooks.json` | yes |
+| Mistral Vibe | native | native | `hooks.toml` block | yes |
+| opencode | native | native | JS plugin shim | no — needs a live session |
 
-| Tool | Memory | Skills | Hooks | Agents | Status |
-| :-- | :-- | :-- | :-- | :-- | :-- |
-| Claude Code | yes | symlink | 3 events | symlink | v0.1 |
-| opencode | native | native | JS plugin shim | symlink | v0.1 |
-| Codex | native | native | `hooks.json` | none | v0.2 |
-| Mistral Vibe | native | native | `hooks.toml` | none | v0.2 |
-| Cursor | native | symlink | `hooks/hooks.json` | symlink | v0.2 |
+Skills need no translation: all five follow the Anthropic Agent Skills spec. Hooks do — each host
+names its events differently, and Mistral Vibe denies by printing JSON rather than by exit code —
+so shared policies are written once and a per-tool adapter speaks each host's protocol.
 
-Skill packs (`thinking`, `engineering`, `review`) land in v0.3.
+Agents and the skill packs (`thinking`, `engineering`, `review`) land in v0.3.
 
 **Prerequisites:** Node >= 20 to run the scaffolder, `jq` and bash >= 3.2 on any machine where the
 hooks run.
@@ -79,7 +79,7 @@ a text-spliced managed block so comments survive. Re-runs are idempotent.
 agent-init [init]      Scaffold .agents/ and wire each detected tool
 agent-init doctor      Probe the wiring and verify hooks actually block
 
---tools <list>     claude-code, opencode (default: detected)
+--tools <list>     claude-code, opencode, codex, mistral-vibe, cursor (default: detected)
 --dir <path>       Target repository (default: cwd)
 --no-symlink       Copy shared content instead of symlinking it
 --skip-hooks       Scaffold content but wire no hooks
