@@ -184,3 +184,38 @@ describe("skill packs", () => {
     expect(stderr).toContain("Unknown pack");
   });
 });
+
+describe("review pack and the agents layer", () => {
+  it("installs the reviewers and links them where the host supports named agents", () => {
+    runCli(["--dir", repo, "--yes", "--packs", "review", "--tools", "claude-code,opencode,cursor"]);
+
+    expect(existsSync(path.join(repo, ".agents/agents/review-security.md"))).toBe(true);
+    for (const dir of [".claude/agents", ".opencode/agent", ".cursor/agents"]) {
+      expect(lstatSync(path.join(repo, dir)).isSymbolicLink()).toBe(true);
+      expect(existsSync(path.join(repo, dir, "review-docs.md"))).toBe(true);
+    }
+  });
+
+  // Decision 8: Claude's `tools` list and opencode's `tools` map are incompatible, and
+  // agents are not documented to ignore unknown frontmatter the way skills are.
+  it("ships agents with intersection-only frontmatter", () => {
+    runCli(["--dir", repo, "--yes", "--packs", "review"]);
+    const agent = readFileSync(path.join(repo, ".agents/agents/review-security.md"), "utf8");
+    const frontmatter = agent.split("---")[1];
+    expect(frontmatter).toContain("name:");
+    expect(frontmatter).toContain("description:");
+    expect(frontmatter).not.toContain("tools:");
+    expect(frontmatter).not.toContain("model:");
+  });
+
+  it("emits no agents for hosts without project-scoped subagents", () => {
+    const { stdout } = runCli(["--dir", repo, "--dry-run", "--packs", "review", "--tools", "codex,mistral-vibe"]);
+    expect(stdout).toContain("degrades to inline briefs");
+    expect(stdout).not.toContain(".codex/agents");
+  });
+
+  it("does not install the agents layer for packs that do not need it", () => {
+    runCli(["--dir", repo, "--yes", "--packs", "thinking"]);
+    expect(existsSync(path.join(repo, ".agents/agents"))).toBe(false);
+  });
+});
