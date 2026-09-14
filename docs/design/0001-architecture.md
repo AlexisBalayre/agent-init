@@ -205,3 +205,27 @@ not block the mechanism.
 
 - **Rejected:** breadth-first across five tools with skills only (barely more than what the
   `AGENTS.md` convention already gives away); depth-first on Claude Code; all five at once.
+
+## 14. v0.2 addendum: what the remaining three tools did to the contract
+
+Verified 2026-09-14 while wiring Codex, Mistral Vibe and Cursor. The three-event contract survived
+all five hosts unchanged, but two findings are worth recording because they justify the adapter
+layer more sharply than the original argument did.
+
+**Codex is Claude-shaped.** Same event names (`PreToolUse`, `Stop`), same stdin fields, same
+"exit 2 blocks with the reason on stderr" convention. One `claude-shaped.sh` implementation now
+serves both, with three-line wrappers naming the tool. The wrappers are kept rather than collapsed:
+wiring and `doctor` output name a tool, not a shape, and the shapes can diverge at any release.
+
+**Mistral Vibe inverts the blocking convention.** It does not honour exit 2. A hook denies by
+exiting **0** and printing `{"decision": "deny", "reason": …}` on **stdout**, with stdout reserved
+for that JSON. Its adapter therefore translates: it captures the policy's stderr, and on exit 2
+emits the JSON denial and exits 0. Vibe's own model does carry a `CLAUDE_CODE` protocol option, but
+it is not settable from a TOML-declared project hook, so translation is the only route.
+
+This is the case the design was built for. A policy that spoke a host protocol directly would have
+been silently unenforced on Vibe — exit 2 would have been read as a hook error, not a denial, and
+`git-safety` would have allowed everything while appearing wired.
+
+`doctor` now probes four of the five with a real payload and asserts the block landed, each against
+its own convention. opencode remains unprobeable without a live session.

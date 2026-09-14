@@ -98,9 +98,40 @@ describe("init", () => {
   });
 
   it("rejects an unsupported tool by name", () => {
-    const { status, stderr } = runCli(["--dir", repo, "--tools", "cursor", "--yes"]);
+    const { status, stderr } = runCli(["--dir", repo, "--tools", "aider", "--yes"]);
     expect(status).toBe(1);
     expect(stderr).toContain("Unsupported tool");
+  });
+
+  it("wires every supported tool when asked", () => {
+    runCli(["--dir", repo, "--tools", "claude-code,opencode,codex,mistral-vibe,cursor", "--yes"]);
+
+    const codex = readFileSync(path.join(repo, ".codex/config.toml"), "utf8");
+    expect(codex).toContain("[[hooks.PreToolUse]]");
+    expect(codex).toContain("codex.sh git-safety");
+
+    const vibe = readFileSync(path.join(repo, ".vibe/hooks.toml"), "utf8");
+    expect(vibe).toContain('type = "pre_tool"');
+    // `match` is only valid on tool hooks, so the post_agent entry must not carry one.
+    expect(vibe.split("[[hooks]]")[2]).not.toContain("match =");
+
+    const cursor = JSON.parse(readFileSync(path.join(repo, ".cursor/hooks.json"), "utf8"));
+    expect(cursor.version).toBe(1);
+    expect(cursor.hooks.beforeShellExecution).toHaveLength(1);
+
+    expect(lstatSync(path.join(repo, ".cursor/skills")).isSymbolicLink()).toBe(true);
+    expect(existsSync(path.join(repo, ".codex/skills"))).toBe(false);
+  });
+
+  // TOML is spliced as text precisely so a user's comments and ordering survive.
+  it("keeps existing TOML comments when splicing into codex config", () => {
+    mkdirSync(path.join(repo, ".codex"), { recursive: true });
+    writeFileSync(path.join(repo, ".codex/config.toml"), '# my notes\nmodel = "gpt-5"\n');
+    runCli(["--dir", repo, "--tools", "codex", "--yes", "--force"]);
+    const codex = readFileSync(path.join(repo, ".codex/config.toml"), "utf8");
+    expect(codex).toContain("# my notes");
+    expect(codex).toContain('model = "gpt-5"');
+    expect(codex).toContain("[[hooks.PreToolUse]]");
   });
 });
 
@@ -111,5 +142,19 @@ describe("doctor", () => {
     const after = runCli(["doctor", "--dir", repo]);
     expect(after.status).toBe(0);
     expect(after.stdout).toContain("probe blocked as expected");
+  });
+});
+
+describe("doctor probes every adapter it can", () => {
+  it("confirms each wired tool actually blocks", () => {
+    runCli(["--dir", repo, "--tools", "claude-code,codex,mistral-vibe,cursor", "--yes"]);
+    const { status, stdout } = runCli([
+      "doctor", "--dir", repo, "--tools", "claude-code,codex,mistral-vibe,cursor",
+    ]);
+    expect(status).toBe(0);
+    for (const tool of ["claude-code", "codex", "mistral-vibe", "cursor"]) {
+      expect(stdout).toContain(`${tool} blocking`);
+    }
+    expect(stdout).not.toContain("NOT blocked");
   });
 });
