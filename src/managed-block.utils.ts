@@ -29,8 +29,8 @@ export function hasManagedBlock(existing: string, comment: (t: string) => string
   return existing.includes(comment(BLOCK_START));
 }
 
-/** TOML has no block comments, so each marker line is commented individually. */
-export const tomlComment = (text: string) => `# ${text}`;
+/** TOML and .gitignore have no block comments, so each marker line is commented individually. */
+export const hashComment = (text: string) => `# ${text}`;
 
 type Json = Record<string, unknown>;
 
