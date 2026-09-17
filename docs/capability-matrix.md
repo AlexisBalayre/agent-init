@@ -77,7 +77,7 @@ also does nothing there.
 
 **What the Codex file buys, read in source at `openai/codex@fcf0545`:** `hidden_from_prompt()`
 clears `prompt_visible` (`ext/skills/src/provider/host.rs:147-149`,
-`ext/skills/src/loader/catalog.rs:256-262`), and every model-facing surface filters on
+`ext/skills/src/catalog.rs:256-262`), and every model-facing surface filters on
 `is_model_visible()`, so the description is never injected. Explicit selection filters on `enabled`
 only (`ext/skills/src/selection.rs:66-75`), so `$skill-name` still works. The file is read from
 `<skill>/agents/openai.yaml` (`ext/skills/src/loader/mod.rs:20-21`), and a file Codex cannot parse
@@ -118,7 +118,7 @@ restores implicit invocation. A test asserts the emitted payload for that reason
 | :-- | :-- | :-- | :-- |
 | Claude Code | **2.1.270** | 2026-09-14 | docs, plus this repo dogfoods the emitted wiring daily |
 | Mistral Vibe | **2.25.3** | 2026-09-14 | source, plus the emitted `hooks.toml` parsed by Vibe's own strict loader |
-| Codex | not installed | 2026-09-14 | docs only |
+| Codex | not installed | 2026-09-17 | docs, plus its skills loader and provider read at `fcf0545` for the invocation switch |
 | opencode | not installed | 2026-09-14 | docs only |
 | Cursor | not installed | 2026-09-14 | docs only |
 
