@@ -13,4 +13,9 @@ agents/skills/<name>/SKILL.md    Anthropic Agent Skills spec: name + description
 agents/agents/<name>.md          intersection-only frontmatter (name, description, body)
 agents/hooks/policies/*.sh       tool-agnostic; read the normalised AGENT_* contract
 agents/hooks/adapters/*.sh       per-tool input parsing and exit-code mapping
+agents/scripts/*.sh              worktree helpers, emitted to .agents/scripts/
+github/workflows/*.yml           emitted to .github/workflows/ by the ci-review pack
 ```
+
+`__AGENT_INIT_VERSION__` in an emitted file is replaced at scaffold time with the version that
+wrote it, so CI installs the tooling its workflow was written against.
