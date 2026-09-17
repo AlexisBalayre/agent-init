@@ -1,10 +1,10 @@
 import path from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import type { Stack, Tool } from "./detect.utils.js";
 
 export type Action =
   | { kind: "create"; target: string; content: string }
-  | { kind: "splice"; target: string; content: string; toml?: boolean }
+  | { kind: "splice"; target: string; content: string; hashComments?: boolean }
   | { kind: "merge-json"; target: string; value: Record<string, unknown> }
   | { kind: "symlink"; target: string; to: string }
   | { kind: "copy-dir"; target: string; from: string }
@@ -23,11 +23,13 @@ export const PACKS = {
   engineering: ["tdd", "diagnosing-bugs", "resolving-merge-conflicts", "wizard", "find-dead-code"],
   planning: ["to-spec", "to-tickets", "wayfinder", "implement"],
   review: ["review-changes", "address-review-comments", "pr-description"],
+  "ci-review": ["pr-ci-review", "review-retro"],
 } as const;
 
 /** Packs whose skills invoke another pack's skills by name, so installing one alone would dangle. */
 const PACK_REQUIRES: Partial<Record<Pack, Pack[]>> = {
   planning: ["thinking", "engineering"],
+  "ci-review": ["review"],
 };
 
 export function resolvePacks(requested: Pack[]): Pack[] {
@@ -62,6 +64,8 @@ export type PlanOptions = {
   /** Gate commands nobody confirmed are written commented out, never silently active. */
   confirmed: boolean;
   packs: Pack[];
+  /** Pinned into emitted CI, which installs this exact agent-init to run its review tooling. */
+  version: string;
 };
 
 const AGENTS_BODY = `## Agent setup
@@ -74,12 +78,24 @@ rather than repeating it.
   this file. If it is missing, the \`adapt-to-project\` skill writes it; skills read it rather
   than assuming a layout.
 - The quality gate reads \`.agents/quality.toml\`.
+- Work on a change in its own worktree: \`.agents/scripts/worktree-create.sh <name>\`, configured by
+  \`.agents/worktree.env\`. \`.agents/scripts/worktree-clean.sh\` removes those whose branch merged.
 - Hook policies are shared shell scripts; each tool has a thin adapter in
   \`.agents/hooks/adapters/\`. The contract is \`.agents/hooks/CONTRACT.md\`.
 
 Managed by agent-init. Edit outside the markers, or edit \`.agents/\` directly.`;
 
 const CLAUDE_BODY = "@AGENTS.md";
+
+const WORKTREE_ENV = `# Read by .agents/scripts/worktree-create.sh and worktree-clean.sh. Sourced as shell.
+#
+# WORKTREE_INSTALL        run inside each new worktree, which starts with no dependencies
+#                         installed; empty skips it. A failing command fails the create.
+# WORKTREE_BRANCH_PREFIX  new branches are <prefix>/<name>; clean only touches this prefix
+
+WORKTREE_INSTALL=""
+WORKTREE_BRANCH_PREFIX="feature"
+`;
 
 const claudeHooks = (hooks: boolean) =>
   hooks
@@ -196,12 +212,19 @@ export function renderQualityToml(stacks: Stack[], confirmed: boolean): string {
 }
 
 export function buildPlan(options: PlanOptions): Action[] {
-  const { root, templates, tools, stacks, symlink, hooks, confirmed } = options;
+  const { root, templates, tools, stacks, symlink, hooks, confirmed, version } = options;
   const packs = resolvePacks(options.packs);
   const actions: Action[] = [];
   const abs = (p: string) => path.join(root, p);
 
   actions.push({ kind: "copy-dir", target: ".agents/hooks", from: path.join(templates, "agents/hooks") });
+  actions.push({ kind: "copy-dir", target: ".agents/scripts", from: path.join(templates, "agents/scripts") });
+  actions.push(
+    existsSync(abs(".agents/worktree.env"))
+      ? { kind: "skip", target: ".agents/worktree.env", reason: "already configured" }
+      : { kind: "create", target: ".agents/worktree.env", content: WORKTREE_ENV },
+  );
+  actions.push({ kind: "splice", target: ".gitignore", content: ".worktrees/", hashComments: true });
   actions.push({
     kind: "create",
     target: ".agents/skills/README.md",
@@ -241,6 +264,18 @@ export function buildPlan(options: PlanOptions): Action[] {
       : { kind: "create", target: ".agents/quality.toml", content: renderQualityToml(stacks, confirmed) },
   );
 
+  if (packs.includes("ci-review")) {
+    const target = ".github/workflows/claude-code-review.yml";
+    if (!tools.includes("claude-code")) {
+      actions.push({ kind: "skip", target, reason: "the CI review runs through claude-code-action; add --tools claude-code" });
+    } else if (existsSync(abs(target))) {
+      actions.push({ kind: "skip", target, reason: "already present; never overwritten" });
+    } else {
+      const workflow = readFileSync(path.join(templates, "github/workflows/claude-code-review.yml"), "utf8");
+      actions.push({ kind: "create", target, content: workflow.replaceAll("__AGENT_INIT_VERSION__", version) });
+    }
+  }
+
   actions.push(spliceOrCreate(root, "AGENTS.md", AGENTS_BODY));
 
   if (tools.includes("claude-code")) {
@@ -255,12 +290,12 @@ export function buildPlan(options: PlanOptions): Action[] {
 
   if (tools.includes("codex")) {
     actions.push({ kind: "skip", target: ".codex/skills", reason: "codex reads .agents/skills natively" });
-    if (hooks) actions.push({ kind: "splice", target: ".codex/config.toml", content: codexHooks, toml: true });
+    if (hooks) actions.push({ kind: "splice", target: ".codex/config.toml", content: codexHooks, hashComments: true });
   }
 
   if (tools.includes("mistral-vibe")) {
     actions.push({ kind: "skip", target: ".vibe/skills", reason: "mistral-vibe reads .agents/skills natively" });
-    if (hooks) actions.push({ kind: "splice", target: ".vibe/hooks.toml", content: vibeHooks, toml: true });
+    if (hooks) actions.push({ kind: "splice", target: ".vibe/hooks.toml", content: vibeHooks, hashComments: true });
   }
 
   if (tools.includes("cursor")) {

@@ -46,6 +46,8 @@ rather than repeating it.
   this file. If it is missing, the `adapt-to-project` skill writes it; skills read it rather
   than assuming a layout.
 - The quality gate reads `.agents/quality.toml`.
+- Work on a change in its own worktree: `.agents/scripts/worktree-create.sh <name>`, configured by
+  `.agents/worktree.env`. `.agents/scripts/worktree-clean.sh` removes those whose branch merged.
 - Hook policies are shared shell scripts; each tool has a thin adapter in
   `.agents/hooks/adapters/`. The contract is `.agents/hooks/CONTRACT.md`.
 
