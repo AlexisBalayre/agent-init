@@ -5,7 +5,7 @@ import { createInterface } from "node:readline/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { SUPPORTED_TOOLS, detectStacks, detectTools, gitState, hasJq, type Tool } from "./detect.utils.js";
-import { apply, describe } from "./apply.utils.js";
+import { apply, describe, wouldChange } from "./apply.utils.js";
 import { PACKS, buildPlan, type Pack } from "./plan.utils.js";
 
 const TEMPLATES = fileURLToPath(new URL("../templates", import.meta.url));
@@ -23,6 +23,7 @@ Options
   --no-symlink       Copy shared content instead of symlinking it
   --skip-hooks       Scaffold content but wire no hooks
   --dry-run          Print the plan, write nothing
+  --check            Exit non-zero if the tree differs from what init would emit
   --yes              Apply without confirming
   --json             Machine-readable output
   --force            Proceed even though the git tree is dirty
@@ -38,6 +39,7 @@ type Options = {
   symlink: boolean;
   hooks: boolean;
   dryRun: boolean;
+  check: boolean;
   yes: boolean;
   json: boolean;
   force: boolean;
@@ -52,6 +54,7 @@ function parse(argv: string[]): Options | { error: string } {
     symlink: true,
     hooks: true,
     dryRun: false,
+    check: false,
     yes: false,
     json: false,
     force: false,
@@ -66,6 +69,7 @@ function parse(argv: string[]): Options | { error: string } {
       case "--no-symlink": options.symlink = false; break;
       case "--skip-hooks": options.hooks = false; break;
       case "--dry-run": options.dryRun = true; break;
+      case "--check": options.check = true; break;
       case "--yes": case "-y": options.yes = true; break;
       case "--json": options.json = true; break;
       case "--force": options.force = true; break;
@@ -97,7 +101,7 @@ async function init(options: Options): Promise<number> {
   const git = gitState(options.dir);
   const root = git.root ?? options.dir;
 
-  if (git.isRepo && !git.isClean && !options.force && !options.dryRun) {
+  if (git.isRepo && !git.isClean && !options.force && !options.dryRun && !options.check) {
     fail(options, "The git tree is dirty. Commit or stash first, or pass --force. Git is your backup.");
     return 1;
   }
@@ -121,6 +125,22 @@ async function init(options: Options): Promise<number> {
     confirmed: interactive,
     packs: options.packs,
   });
+
+  if (options.check) {
+    // Drift gate. Content-compares what init would emit against what is committed, so a
+    // project that symlinks the shared tree into one source still passes.
+    const drifted = plan.filter((action) => wouldChange(action, root));
+    if (options.json) {
+      process.stdout.write(`${JSON.stringify({ root, tools, drifted: drifted.map((a) => a.target) }, null, 2)}\n`);
+    } else if (drifted.length === 0) {
+      process.stdout.write(`agent-init --check: ${root} matches what init would emit.\n`);
+    } else {
+      process.stdout.write(`agent-init --check: ${drifted.length} path(s) differ from what init would emit\n\n`);
+      for (const action of drifted) process.stdout.write(`  drift  ${action.target}\n`);
+      process.stdout.write("\nRun agent-init to bring them back in line.\n");
+    }
+    return drifted.length === 0 ? 0 : 1;
+  }
 
   if (options.json) {
     process.stdout.write(`${JSON.stringify({ root, tools, stacks, plan, applied: false }, null, 2)}\n`);

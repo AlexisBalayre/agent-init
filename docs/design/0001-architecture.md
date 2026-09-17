@@ -78,7 +78,9 @@ Python API is expressible without hand-editing shell.
 ## 6. Verification: fixtures over live runs
 
 - Golden-file tests: inputs to exact emitted tree.
-- Schema validation of emitted JSON/TOML against each tool's published schema.
+- Schema validation of emitted JSON/TOML against each tool's published schema. **Not built.** What
+  exists instead is narrower and stronger where it applies: the emitted Vibe `hooks.toml` is parsed
+  by Vibe's own strict loader (decision 17).
 - **Contract fixtures**: the real stdin payload each tool sends for each normalised event,
   captured by hand once, committed under `test/fixtures/<tool>/<event>.json`, and asserted
   against every adapter — including that the blocking path returns that tool's refusal shape.
@@ -160,9 +162,10 @@ CI runs four jobs:
 
 1. `typecheck` and `build`
 2. `vitest` — golden files, schema validation, adapter contract fixtures
-3. `agent-init init --dry-run --check` — fails when the committed tree differs from what the
-   current generator would emit. This is the integration test: free, no API keys, and it catches a
-   generator change that the demo did not follow.
+3. `agent-init --check` — fails when the committed tree differs from what the current generator
+   would emit. This is the integration test: free, no API keys, and it catches a generator change
+   the committed tree did not follow. It compares *content*, not inodes, so the shared trees this
+   repo symlinks into `templates/` resolve to the same bytes a copy would and do not read as drift.
 4. `shellcheck -s bash` over `templates/agents/hooks/**/*.sh`
 
 - **Cost accepted:** dogfooding exercises one stack only. Detection for Python, Go, and Rust needs
@@ -280,3 +283,21 @@ failure mode this project has rejected at every other decision.
 `(ACME-XXXX)` example token and a `core.md` reference on a line my case-sensitive grep skipped. The
 script is case-insensitive and ran on every file, which is the entire argument for decision 15: a
 check that runs is worth more than an intention that is careful.
+
+## 17. Correcting the record, and the gate that was only written down
+
+An audit of these decisions against the code found five agreed items unbuilt, two of which this
+document described in the present tense as though they were running: the `--check` drift gate and
+schema validation of emitted config. A design record that overstates what exists is worse than a gap,
+because it stops anyone from noticing the gap.
+
+- **`--check` is now built and wired into CI**, and the repository is genuinely scaffolded by its own
+  tool rather than partially by hand. Turning the gate on immediately found 18 paths the tool would
+  emit that had never been emitted — the dogfooding in decision 11 was real for hooks and settings
+  and aspirational for everything else. It was then verified the only way a guard can be: by
+  breaking `CLAUDE.md` and watching the gate fail.
+- **Schema validation is marked unbuilt** rather than described as a job that runs.
+
+Still unbuilt and now recorded honestly: the version stamp (decisions 1 and 9), a symlink-failure
+fallback for Windows (decision 3), and interactive tool/pack selection (decision 10 — today the
+interactive path is a single confirm, and every option is reachable by flag).
