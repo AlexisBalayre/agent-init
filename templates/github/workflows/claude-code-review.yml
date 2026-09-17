@@ -59,7 +59,6 @@ jobs:
       contents: read
       pull-requests: write
       issues: read
-      id-token: write
       # For the poster's claude-review commit status, nothing else.
       statuses: write
     outputs:
@@ -198,10 +197,12 @@ jobs:
           # Every verb the protocol needs is listed: unlisted ones fall through to
           # a permission prompt that nobody is here to answer, and the run halts
           # at the gate with an empty record that reads as a clean review. The
-          # allowlist is read-only on purpose: the model reports findings and the
-          # poster below writes them, so `gh pr comment`, `gh pr review` and the
-          # inline-comment MCP tool are all absent, and a PR whose own diff tells
-          # the reviewer to post something has no channel to do it through. `git
+          # allowlist carries no write verb: `gh pr comment`, `gh pr review` and the
+          # inline-comment MCP tool are all absent, so the model reports findings and
+          # the poster below writes them. It narrows, it does not sandbox:
+          # `Bash(gh api repos/*)` matches on prefix, so a call appending `-X POST` is
+          # not excluded by it, and this step's token can write to the PR. What rules
+          # out a silent unreviewed PR is the poster, not this list. `git
           # fetch` and `git checkout` are deliberately absent too: the
           # full-history checkout above already carries every ref the protocol
           # reads, and the only checkout the model could want is reverting the
