@@ -1,78 +1,62 @@
 ---
 name: domain-modeling
-description: Maintain this repo's documented language as design decisions land. Use when pinning down domain terminology, recording an architectural decision, or when another skill needs the docs kept current during a session.
+description: Build and sharpen a project's domain model. Use when discussing codebase terminology, writing or editing the project glossary, or recording or editing an ADR.
 ---
 
 # Domain Modeling
 
-Actively sharpen the project's documented language as you design: challenge terms, stress-test them with edge-case scenarios, and update the docs the moment a decision crystallises. Merely *reading* the docs for vocabulary is not this skill; reach for it when the language is being *changed*, not just consumed.
+Actively build and sharpen the project's domain model as you design. This is the *active* discipline: challenging terms, inventing edge-case scenarios, and writing the glossary and decisions down the moment they crystallise. (Merely *reading* the glossary for vocabulary is not this skill: that's a one-line habit any skill can do. This skill is for when you're changing the model, not just consuming it.)
 
-## Where the documented language lives
+## Where the domain model lives
 
-Find this project's equivalents before you start; `AGENTS.md` should say where they are. Most repos
-have some subset:
+The project map in `AGENTS.md` says where each of these lives. Most repos keep some subset:
 
 | Source | What it covers |
 | :-- | :-- |
-| A glossary | Cross-cutting nouns and the one canonical name for each |
+| A glossary | The domain language: one canonical name per concept, in one table |
 | Naming or code conventions | Role taxonomy, naming stems, module/class suffixes |
-| Narrative docs per subsystem | The current story of how one area works |
+| An architecture reference | System shape: components, flows, layout |
+| Narrative docs per subsystem | The rationale behind how one area works |
 | An ADR log | Dated record of why a hard-to-reverse choice was made |
 
-If the project has none of these, that is itself the first finding: propose the smallest one that
-would have prevented the ambiguity you just hit, rather than inventing a full documentation set.
+If the project keeps none of these, that is itself the first finding: propose the smallest one that would have prevented the ambiguity you just hit (usually a glossary at `docs/glossary.md`), record its location in the project map, and never create a parallel `CONTEXT.md` beside docs that already exist.
 
-Before a session, skim whichever of them exist for the area in question.
+Before a session, skim the glossary and any ADRs already filed for the area.
 
 ## During the session
 
-### Challenge against the existing language
+### Challenge against the glossary
 
-When the user uses a term that conflicts with the project's documented language, call it out.
-Example: "The glossary defines `Session` as the live client connection context; you're using it for
-the process that runs it. Which do you mean?"
+When the user uses a term that conflicts with the existing language in the glossary, call it out immediately. "Your glossary defines 'cancellation' as X, but you seem to mean Y. Which is it?"
 
 ### Sharpen fuzzy language
 
-Propose precise canonical terms; pull from the existing glossary first, only invent when nothing
-fits. The ambiguities worth hunting are the ones where one word covers two lifetimes or two owners:
+When the user uses vague or overloaded terms, propose a precise canonical term. "You're saying 'account': do you mean the Customer or the User? Those are different things."
 
-- A word used for both a user-facing context and the process implementing it
-- A word used for both an inbound event and its rendered output
-- Two words from different vendors or libraries for the same concept (pick one, record the loser)
-- A word that means something different on each side of a service boundary
+### Discuss concrete scenarios
 
-### Stress-test with concrete scenarios
-
-Force precision with edge cases that touch a boundary. The shapes that expose fuzzy language:
-
-- Something is in flight when its owner disappears — what state is it in?
-- Two components disagree about the same entity's state — which one is authoritative?
-- A fan-out partially fails — is the whole thing succeeded, partial, or failed, and who decides?
+When domain relationships are being discussed, stress-test them with specific scenarios. Invent scenarios that probe edge cases and force the user to be precise about the boundaries between concepts.
 
 ### Cross-reference with code
 
-When the user states how something works, verify it against the code in the area they are
-describing. Surface contradictions with the file that disagrees: "`session-manager` tears down when
-the last participant leaves, but you said sessions stay warm. Which is right?"
+When the user states how something works, check whether the code agrees (the architecture reference, if the project keeps one, maps where each component lives). If you find a contradiction, surface it: "Your code cancels entire Orders, but you just said partial cancellation is possible. Which is right?"
 
-### Update the existing docs inline
+### Update the glossary inline
 
-When something resolves, update it in place. Capture as it happens; don't batch.
+When a term is resolved, update the glossary right there. Don't batch these up: capture them as they happen. Use the format in [CONTEXT-FORMAT.md](./CONTEXT-FORMAT.md).
 
-- **New cross-cutting noun?** Add it to the project's glossary.
-- **Naming stem or role suffix decision?** Update the naming conventions.
-- **Subsystem narrative has drifted from reality?** Update that subsystem's doc.
-- **Hard-to-reverse choice with non-obvious rejected alternatives?** Open an ADR.
+The glossary should be totally devoid of implementation details. Do not treat it as a spec, a scratch pad, or a repository for implementation decisions. It is a glossary and nothing else. What resolves outside the glossary goes where it already lives:
 
-Do not create a parallel `CONTEXT.md`. See [CONTEXT-FORMAT.md](./CONTEXT-FORMAT.md) for the underlying glossary discipline if you need a reminder of what a good entry looks like.
+- **Naming or structure rule?** The project's conventions for that area.
+- **Rationale for how a subsystem works?** That subsystem's narrative doc.
+- **System shape has drifted from reality?** The architecture reference.
 
 ### Offer ADRs sparingly
 
-Only offer an ADR when all three are true:
+Only offer to create an ADR when all three are true:
 
 1. **Hard to reverse**: the cost of changing your mind later is meaningful
 2. **Surprising without context**: a future reader will wonder "why did they do it this way?"
-3. **The result of a real trade-off**: there were genuine alternatives and one was picked for specific reasons
+3. **The result of a real trade-off**: there were genuine alternatives and you picked one for specific reasons
 
-If any of the three is missing, skip it. See [ADR-FORMAT.md](./ADR-FORMAT.md) and [docs/adr/README.md](../../../docs/adr/README.md) for the bar and template.
+If any of the three is missing, skip the ADR. Use the format in [ADR-FORMAT.md](./ADR-FORMAT.md).

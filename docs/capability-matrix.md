@@ -57,7 +57,30 @@ Neither holds for agents. See decision 8 in [`design/0001-architecture.md`](desi
 | **Mistral Vibe** | native | nothing: native | managed block in `hooks.toml` | none |
 | **Cursor** | native | symlink | `hooks.json`, deep-merged | symlink (v0.3) |
 
+## Skill invocation control
+
+Nine shipped skills are meant to run only when a human names them: the four `planning` skills,
+`handoff`, `zoom-out`, `wait-what`, `to-questionnaire`, `adapt-to-project`, and nothing else
+should fire them. They say so with Claude Code's `disable-model-invocation: true`. Verified
+2026-09-17 (**D** documented, **S** read in source):
+
+| | Honours `disable-model-invocation` | Native equivalent | Name a skill explicitly |
+| :-- | :-- | :-- | :-- |
+| **Claude Code** | **yes** (D) | also `skillOverrides: "user-invocable-only"` in settings (D) | `/skill-name` (D) |
+| **Cursor** | **yes** (D) | — | `/skill-name` (D) |
+| **Codex** | no: key ignored (S) | `agents/openai.yaml` in the skill dir, `policy.allow_implicit_invocation: false` (D) | `$skill-name`, or `/skills` (D) |
+| **opencode** | no: key ignored (D) | permission `"skill": {"<name>": "deny"}` hides it from the model; the `/skill-name` command stays (S, untested) | `/skill-name` (S) |
+| **Mistral Vibe** | no: key ignored (S) | none. `user-invocable: false` is the opposite switch (model-only) | `/skill-name` (D) |
+
+Unknown frontmatter keys are ignored by Codex, opencode and Vibe, so the key does no harm; it
+also does nothing there.
+
 ## Known gaps
+
+- **User-invoked skills are model-invocable on Codex, opencode and Mistral Vibe.** Their
+  descriptions load into context and the model may fire them unprompted. Nothing is emitted to
+  close this yet: Codex's `agents/openai.yaml` and opencode's permission are the native routes and
+  are unbuilt; Vibe has no route. See the table above.
 
 - **opencode cannot enforce at turn-end.** `session.idle` fires after the turn, and opencode
   offers no documented way to feed hook output back into the agent's context, so a failing gate is
@@ -98,3 +121,14 @@ rows are honest about which claims are tested and which are read.
 - Cursor rules — https://cursor.com/docs/rules
 - Mistral Vibe — https://github.com/mistralai/mistral-vibe (hook models and protocol read from
   `vibe/core/hooks/models.py`, which the docs do not cover)
+- Skill invocation control, all read 2026-09-17:
+  - Claude Code — https://code.claude.com/docs/en/skills ("Control who invokes a skill")
+  - Cursor — https://cursor.com/docs/context/skills
+  - Codex — https://learn.chatgpt.com/docs/build-skills; source `openai/codex@fcf0545`,
+    `codex-rs/skills/src/parser.rs` (frontmatter read: name, description, metadata only)
+  - opencode — https://opencode.ai/docs/skills/; source `anomalyco/opencode@5a83358`,
+    `packages/opencode/src/skill/index.ts` (deny filters the model's list) and
+    `src/command/index.ts` (every skill becomes a command)
+  - Mistral Vibe — https://docs.mistral.ai/vibe/code/cli/skills; source
+    `mistralai/mistral-vibe@d4b3223`, `vibe/core/skills/models.py` (`user-invocable`, extra keys
+    allowed)
