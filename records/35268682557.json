@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-09-17T20:19:06.140Z",
+  "repository": "AlexisBalayre/agent-init",
+  "run_id": "35268682557",
+  "run_url": "https://github.com/AlexisBalayre/agent-init/actions/runs/35268682557",
+  "actor": "AlexisBalayre",
+  "commit_sha": "6b2e1d897c1892e5d5a4b405ced3fd133f5bd505",
+  "source": "pr",
+  "pr_number": 14,
+  "action": "review",
+  "reviewers_spawned": [
+    "correctness",
+    "security",
+    "context",
+    "conventions",
+    "maintainability",
+    "docs"
+  ],
+  "reviewers_skipped": [],
+  "review_mode": "full",
+  "incremental_from_sha": null,
+  "prior_importants": [],
+  "findings": [
+    {
+      "file": ".github/workflows/claude-code-review.yml",
+      "line": "237",
+      "area": "security",
+      "confidence": "high",
+      "tag": "pre-existing",
+      "description": "The reviewer's --allowedTools entry `Bash(gh api repos/*)` (also at templates/github/workflows/claude-code-review.yml:206) is a prefix-with-wildcard match, not verb-restricted, so it also matches mutating calls like `gh api repos/OWNER/REPO/issues/N/comments -X POST -f body=...` — not just reads. The ambient token now used (job's own github.token, permissions: pull-requests:write, statuses:write) could authorize such a call if the model's diff-reading were ever prompt-injected into issuing one. This predates this PR: the previously-exchanged GitHub App token almost certainly carried the same write scope (it's what let the action post its own PR comments), so this PR doesn't newly enable the loophole, but the workflow's own comment ('the allowlist is read-only on purpose... has no channel to do it through') overstates the containment this glob actually provides.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": ".github/workflows/claude-code-review.yml",
+      "line": "76",
+      "area": "security",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "`id-token: write` in the job's permissions block (also templates/github/workflows/claude-code-review.yml:62) was granted for claude-code-action's OAuth-to-GitHub-App-token OIDC exchange. This PR adds `github_token: ${{ github.token }}` specifically to skip that exchange, so the permission is likely now unused. Minor over-grant; worth confirming against the action's internals and dropping if truly dead.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "scripts/render-review-workflow.mjs",
+      "line": "15-17",
+      "area": "maintainability",
+      "confidence": "high",
+      "tag": "nit",
+      "description": "The `ORPHAN` constant is built via string concatenation (`git ${\"rm\"} ${\"-rf\"}`) with a comment claiming this is 'so this file does not carry a literal that the git-safety policy blocks on sight.' The repo's actual git-safety policy (templates/agents/hooks/policies/git-safety.sh) blocks the substring `rm -rf /` (trailing slash, root), not `rm -rf .`; a plain string containing `git rm -rf .` passes that guard cleanly. The stated rationale for the indirection doesn't hold against the one named mechanism, so a future reader has no way to verify what it's actually guarding against and may 'simplify' it back on the mistaken belief it's equally safe either way.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "scripts/render-review-workflow.mjs",
+      "line": "19-41",
+      "area": "maintainability",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "Transform 1 matches from the top of the file up to the `name: Claude Code Review` anchor and unconditionally substitutes the entire hand-authored `HEADER` constant — it never diffs the matched text, so it can't fail loudly the way transforms 2-6 do. Any future edit to the template's own header prose therefore has zero effect on the rendered `.github/workflows/claude-code-review.yml` and produces no test failure or thrown error; a contributor editing the template header and expecting it to propagate will be silently wrong.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "scripts/render-review-workflow.mjs",
+      "line": "72-94",
+      "area": "conventions",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The numbered inline comments on `TRANSFORMS` entries 1, 4, and 6 restate what the adjacent regex/replacement already makes obvious rather than adding a non-obvious why (e.g. `// 4. Owner-only trigger, behind an enable switch.` when `OWNER_GATE`'s own comment three lines above already states the actual reasoning) — AGENTS.md's comment rule asks for `//` only on a non-obvious why, never narration of what the code does.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": ".github/workflows/claude-code-review.yml",
+      "line": "209-213",
+      "area": "context",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The new `github_token: ${{ github.token }}` input to `anthropics/claude-code-action@2cc1ac1331eac7a6a96d716dd204dd2888d0fcd2` (v1.0.112, also templates/github/workflows/claude-code-review.yml:183-187) can't be checked against that action's real `action.yml` from within this static, network-less review. The usage reads as internally coherent (matches the job's existing permissions and the read-only tool allowlist), but its correctness rests on external knowledge of the pinned version's interface.",
+      "body": null,
+      "suggestion": null
+    }
+  ],
+  "refuted_findings": [],
+  "process_issues": [
+    {
+      "component": "correctness",
+      "description": "The correctness reviewer's sandbox blocked direct `node` execution and writes outside the workspace root, so it could not run scripts/render-review-workflow.mjs end-to-end as an executable spike. It fell back to static regex tracing plus `git show <sha>:path | grep` cross-checks against the actual blob content, which appears to have covered the same ground (the repo's own vitest test is the executable verification), but the impediment is noted for completeness."
+    }
+  ],
+  "comments_posted_actual": 0,
+  "is_error": false,
+  "cost_usd": 6.890708150000001,
+  "duration_ms": 812189,
+  "num_turns": 21,
+  "tokens": {
+    "input": 29,
+    "output": 43376,
+    "cache_read": 850373,
+    "cache_creation": 108124,
+    "total": 1001902
+  }
+}
