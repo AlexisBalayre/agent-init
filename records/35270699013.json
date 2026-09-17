@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-09-17T20:35:17.793Z",
+  "repository": "AlexisBalayre/agent-init",
+  "run_id": "35270699013",
+  "run_url": "https://github.com/AlexisBalayre/agent-init/actions/runs/35270699013",
+  "actor": "AlexisBalayre",
+  "commit_sha": "55fa2ac62e3441788aa673801ff84656f768d99d",
+  "source": "pr",
+  "pr_number": 14,
+  "action": "review",
+  "reviewers_spawned": [
+    "correctness",
+    "security",
+    "context",
+    "conventions",
+    "maintainability",
+    "docs"
+  ],
+  "reviewers_skipped": [],
+  "review_mode": "incremental",
+  "incremental_from_sha": "6b2e1d897c1892e5d5a4b405ced3fd133f5bd505",
+  "prior_importants": [],
+  "findings": [
+    {
+      "file": "scripts/render-review-workflow.mjs",
+      "line": "82-98",
+      "area": "maintainability",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "Removing the numbered narration comments from TRANSFORMS left entry 2 (stripping the AGENT_INIT_VERSION env block, lines ~84-86) with no explanatory comment at its call site at all — entries 1 and 5 are still covered by the new TEMPLATE_HEADER_SHA JSDoc and a retained comment respectively, but entry 2's old `// 2. No published version to pin: the tooling is built, not installed.` is gone, so that rationale now lives only implicitly in the HEADER text, one level removed from the actual regex/replacement pair. Entries 4 and 6 also lost their one-liners but are largely self-evident from the substituted content. Net effect is a minor, patchy readability dip, not a structural problem — worth a one-line comment restore on entry 2 if the file is touched again.",
+      "body": null,
+      "suggestion": null
+    }
+  ],
+  "refuted_findings": [
+    {
+      "file": "templates/github/workflows/claude-code-review.yml",
+      "line": "58-64",
+      "area": "security",
+      "confidence": "medium",
+      "tag": "important",
+      "description": "Claimed the delta removed id-token: write from the rendered .github/workflows/claude-code-review.yml but left it in the template it renders from, breaking the template/rendered-file sync test and shipping an unused permission to downstream scaffold users.",
+      "refutation": "git show HEAD:templates/github/workflows/claude-code-review.yml (HEAD = 55fa2ac62e3441788aa673801ff84656f768d99d, confirmed equal to the PR's actual headRefOid) contains no id-token line; git diff 6b2e1d897c1892e5d5a4b405ced3fd133f5bd505..HEAD -- templates/github/workflows/claude-code-review.yml shows the commit explicitly removing it (`-      id-token: write`). The reviewer read the live working-tree copy of this file, which was left in a stale, uncommitted, reverted state (re-adding id-token: write and undoing two other parts of the delta) before the review began — most likely the CI action's own config-restore mechanism, or session state, rather than the PR's real committed content. A dedicated review-validator (opus) independently reproduced this via git grep against both SHAs and reached the same conclusion."
+    }
+  ],
+  "process_issues": [
+    {
+      "component": "orchestrator",
+      "description": "The working tree showed templates/github/workflows/claude-code-review.yml as modified (stale, reverted to the pre-delta state) before the review started, visible in the initial git status. I did not proactively flag this specific file as restore-affected in the security reviewer's brief, only giving a general instruction to use git diff/git show. The security reviewer partly read the live working-tree file instead and raised a false-positive important finding as a result (caught by validation). Future incremental runs touching this path should explicitly instruct reviewers to use `git show <sha>:<path>` rather than Read/cat for any file under templates/ or the other config-restore paths, per SKILL.md section 2."
+    }
+  ],
+  "comments_posted_actual": 0,
+  "is_error": false,
+  "cost_usd": 5.999800500000001,
+  "duration_ms": 568388,
+  "num_turns": 38,
+  "tokens": {
+    "input": 49,
+    "output": 32815,
+    "cache_read": 1347390,
+    "cache_creation": 77948,
+    "total": 1458202
+  }
+}
