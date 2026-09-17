@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-09-17T21:38:58.306Z",
+  "repository": "AlexisBalayre/agent-init",
+  "run_id": "35276031135",
+  "run_url": "https://github.com/AlexisBalayre/agent-init/actions/runs/35276031135",
+  "actor": "AlexisBalayre",
+  "commit_sha": "fa0db252e2ec18b5a9bd4f251e04aa255a908339",
+  "source": "pr",
+  "pr_number": 16,
+  "action": "review",
+  "reviewers_spawned": [
+    "correctness",
+    "context",
+    "conventions",
+    "maintainability",
+    "docs"
+  ],
+  "reviewers_skipped": [
+    "security"
+  ],
+  "review_mode": "full",
+  "incremental_from_sha": null,
+  "prior_importants": [],
+  "findings": [
+    {
+      "file": "docs/capability-matrix.md",
+      "line": "80",
+      "area": "docs",
+      "confidence": "high",
+      "tag": "important",
+      "description": "Source citation cites a non-existent path: `ext/skills/src/loader/catalog.rs` — `catalog.rs` lives at `ext/skills/src/catalog.rs`, not under `loader/`.",
+      "body": "The new \"What the Codex file buys\" paragraph cites `` `ext/skills/src/loader/catalog.rs:256-262` `` for `hidden_from_prompt()`/`is_model_visible()`. I resolved the short SHA `openai/codex@fcf0545` to the full commit `fcf05456bb27e6c3d5677550f54011db6a2a0817` and fetched the tree directly from the GitHub API: `codex-rs/ext/skills/src/catalog.rs` exists at the top level and contains exactly `hidden_from_prompt`/`is_model_visible` around lines 256-262; `codex-rs/ext/skills/src/loader/` contains only `discovery.rs, environment.rs, host.rs, host_merge.rs, metadata.rs, mod.rs, namespace.rs` — there is no `catalog.rs` under `loader/`. The line numbers and content are exactly right, only the directory segment is spurious. Every other citation in this same paragraph (`provider/host.rs:147-149`, `selection.rs:66-75`, `loader/mod.rs:20-21`, `loader/metadata.rs:117-140`) checked out verbatim against the source at that commit. This paragraph's entire value is that a reader can follow these citations and verify the claim themselves; one wrong path breaks that for the one citation that matters most (the function the whole mechanism depends on).\n\n<https://github.com/AlexisBalayre/agent-init/blob/fa0db252e2ec18b5a9bd4f251e04aa255a908339/docs/capability-matrix.md#L80>",
+      "suggestion": "`ext/skills/src/catalog.rs:256-262`), and every model-facing surface filters on"
+    },
+    {
+      "file": "docs/capability-matrix.md",
+      "line": "121",
+      "area": "conventions",
+      "confidence": "medium",
+      "tag": "pre-existing",
+      "description": "The \"Verified against\" ledger still lists Codex as \"docs only\" / 2026-09-14, but the file's own body (the pre-existing Sources section at lines 142-143, and now this PR's new paragraph at lines 78-85) already cites Codex source read directly, at file:line granularity — the ledger row that's supposed to be the authoritative record of \"which claims are tested and which are read\" (per the file's own line 125-126) no longer matches the file's own body, and this predates this PR (the Sources section's Codex source-citation was already there, unreflected in the ledger, before this diff).",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "docs/design/0001-architecture.md",
+      "line": "351",
+      "area": "docs",
+      "confidence": "high",
+      "tag": "pre-existing",
+      "description": "Decision 18 says \"Nine skills\" carry `disable-model-invocation: true`; the current, correct count (independently verified via frontmatter grep) is fifteen — matching this PR's new decision 22, which uses the accurate \"Fifteen\" without reconciling the stale count two decisions earlier in the same document.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "docs/design/0001-architecture.md",
+      "line": "493",
+      "area": "docs",
+      "confidence": "high",
+      "tag": "nit",
+      "description": "Decision 22's \"Cost accepted\" bullet describes the 15 new files as \"two-line\"; each is actually six lines (a 4-line explanatory comment block plus the 2-line YAML payload) — the comment block is the part that explains the file's purpose to a future maintainer, so undercounting it understates what's actually shipped.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "templates/agents/skills/writing-for-agents/SKILL-MECHANICS.md",
+      "line": null,
+      "area": "maintainability",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The skill-authoring reference explains how to make a skill user-invoked (`disable-model-invocation: true`) but doesn't mention the new second step this PR introduces (also add `agents/openai.yaml` for Codex); a contributor following just this doc will produce an incomplete opt-out until `test/skill-invocation.test.ts` fails in CI.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "docs/capability-matrix.md",
+      "line": "78-84",
+      "area": "maintainability",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The new paragraph's five hand-written file:line citations into Codex's source at a pinned commit have no re-verification mechanism if that source changes; this continues a pattern the file already used pre-PR (bare paths without line numbers), so it's an intensification of existing practice rather than a new risk, but worth naming since one of the five citations was already wrong (see the important finding on line 80).",
+      "body": null,
+      "suggestion": null
+    }
+  ],
+  "refuted_findings": [],
+  "process_issues": [
+    {
+      "component": "platform",
+      "description": "Several plain multi-line Bash constructs (a bash `for` loop, `git ls-tree`, a `python3 -c` heredoc-style invocation) triggered the sandbox's approval gate and could not run non-interactively during this session, despite being read-only. Worked around by using `git show <sha>:<path>`, `git diff`, and per-file `grep`/`find` instead; no assignment content was left unchecked, but a couple of reviewer sub-agents independently hit and reported the same friction."
+    }
+  ],
+  "comments_posted_actual": 1,
+  "is_error": false,
+  "cost_usd": 8.120666000000002,
+  "duration_ms": 1127772,
+  "num_turns": 49,
+  "tokens": {
+    "input": 71,
+    "output": 43414,
+    "cache_read": 2300290,
+    "cache_creation": 199889,
+    "total": 2543664
+  }
+}
