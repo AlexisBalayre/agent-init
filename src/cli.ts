@@ -15,6 +15,9 @@ const USAGE = `agent-init — one shared agent setup for several coding agents
 Usage
   npx agent-init [init]      Scaffold .agents/ and wire each detected tool
   npx agent-init doctor      Probe the wiring and verify hooks actually block
+  npx agent-init review <step>
+                             CI review tooling, run by the emitted workflow:
+                             preflight, schema, post, metrics
 
 Options
   --tools <list>     Comma-separated: ${SUPPORTED_TOOLS.join(", ")} (default: detected)
@@ -124,6 +127,7 @@ async function init(options: Options): Promise<number> {
     symlink: options.symlink, hooks: options.hooks,
     confirmed: interactive,
     packs: options.packs,
+    version: packageVersion(),
   });
 
   if (options.check) {
@@ -175,6 +179,11 @@ async function init(options: Options): Promise<number> {
     process.stdout.write(`\nDone. Verify with: npx agent-init doctor\n`);
   }
   return 0;
+}
+
+function packageVersion(): string {
+  const pkg = fileURLToPath(new URL("../package.json", import.meta.url));
+  return (JSON.parse(readFileSync(pkg, "utf8")) as { version: string }).version;
 }
 
 type Check = { name: string; ok: boolean; detail: string };
@@ -284,16 +293,37 @@ function fail(options: Options, message: string) {
   else process.stderr.write(`agent-init: ${message}\n`);
 }
 
+const REVIEW_STEPS = ["preflight", "schema", "post", "metrics"] as const;
+
+/** The emitted CI workflow's deterministic steps. Each reads its inputs from the environment. */
+async function review(step: string | undefined): Promise<number> {
+  switch (step) {
+    case "preflight": await (await import("./review/preflight.script.js")).main(); return 0;
+    case "schema": {
+      const { REVIEW_SUMMARY_SCHEMA } = await import("./review/review-summary.schemas.js");
+      process.stdout.write(JSON.stringify(REVIEW_SUMMARY_SCHEMA));
+      return 0;
+    }
+    case "post": (await import("./review/post.script.js")).main(); return 0;
+    case "metrics": (await import("./review/metrics.script.js")).main(); return 0;
+    default:
+      process.stderr.write(`agent-init: review needs one of ${REVIEW_STEPS.join(", ")}\n`);
+      return 1;
+  }
+}
+
 async function main(argv: string[]): Promise<number> {
   if (argv.includes("-h") || argv.includes("--help")) {
     process.stdout.write(USAGE);
     return 0;
   }
   if (argv.includes("-v") || argv.includes("--version")) {
-    const pkg = fileURLToPath(new URL("../package.json", import.meta.url));
-    process.stdout.write(`${JSON.parse(readFileSync(pkg, "utf8")).version}\n`);
+    process.stdout.write(`${packageVersion()}\n`);
     return 0;
   }
+
+  // Lazily imported: init and doctor never load the review tooling.
+  if (argv[0] === "review") return review(argv[1]);
 
   const parsed = parse(argv);
   if ("error" in parsed) {
