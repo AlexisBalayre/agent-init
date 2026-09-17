@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-09-17T21:19:16.378Z",
+  "repository": "AlexisBalayre/agent-init",
+  "run_id": "35273507803",
+  "run_url": "https://github.com/AlexisBalayre/agent-init/actions/runs/35273507803",
+  "actor": "AlexisBalayre",
+  "commit_sha": "4dd5a27d051f9bb99fece5fa36f55e8324291afd",
+  "source": "pr",
+  "pr_number": 15,
+  "action": "review",
+  "reviewers_spawned": [],
+  "reviewers_skipped": [],
+  "review_mode": "full",
+  "incremental_from_sha": null,
+  "prior_importants": null,
+  "findings": null,
+  "refuted_findings": null,
+  "process_issues": null,
+  "comments_posted_actual": 0,
+  "is_error": false,
+  "cost_usd": 13.608295449999998,
+  "duration_ms": 1486229,
+  "num_turns": 51,
+  "tokens": {
+    "input": 87,
+    "output": 71337,
+    "cache_read": 3521399,
+    "cache_creation": 168648,
+    "total": 3761471
+  }
+}
