@@ -28,3 +28,34 @@ describe("the repo's review workflow", () => {
     expect(committed).toContain('RESTORE_PATHS: "AGENTS.md .agents templates"');
   });
 });
+
+/** The permissions block of one job, as written in the workflow. */
+function jobPermissions(workflow: string, job: string): string {
+  const body = workflow.split(`\n  ${job}:\n`)[1] ?? "";
+  const block = /^    permissions:\n((?:      .*\n)+)/m.exec(body);
+  return block?.[1] ?? "";
+}
+
+describe.each([
+  ["the emitted template", "templates/github/workflows/claude-code-review.yml"],
+  ["this repo's copy", ".github/workflows/claude-code-review.yml"],
+])("%s keeps the model away from a write token", (_label, file) => {
+  const workflow = readFileSync(path.resolve(file), "utf8");
+
+  // The whole point of the split: a review talked into writing to the PR has no token that can.
+  it("gives the job that runs the model no write permission", () => {
+    const permissions = jobPermissions(workflow, "claude-review");
+    expect(permissions).toContain("contents: read");
+    expect(permissions).not.toMatch(/write/);
+  });
+
+  it("keeps the write permissions in the poster's own job", () => {
+    const permissions = jobPermissions(workflow, "post-review");
+    expect(permissions).toContain("pull-requests: write");
+    expect(permissions).toContain("statuses: write");
+  });
+
+  it("posts on always(), so a dead review still leaves a verdict", () => {
+    expect(workflow).toMatch(/post-review:\n\s+needs: claude-review\n\s+if: always\(\)/);
+  });
+});

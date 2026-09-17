@@ -93,7 +93,7 @@ const TRANSFORMS = [
   ],
   // agent-init is unpublished, and here the tooling is the code under review.
   [
-    /      # --ignore-scripts: the install runs with this job's token in the environment\.\n      - name: Install review tooling\n        run: npm install --global --ignore-scripts "agent-init@\$\{AGENT_INIT_VERSION\}"\n/,
+    /      # --ignore-scripts: the install runs with this job's token in the environment\.\n      - name: Install review tooling\n        run: npm install --global --ignore-scripts "agent-init@\$\{AGENT_INIT_VERSION\}"\n/g,
     TOOLING_STEP,
   ],
   [/agent-init review (preflight|schema|post|metrics)/g, 'node "${{ steps.tooling.outputs.cli }}" review $1'],

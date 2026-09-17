@@ -55,14 +55,18 @@ jobs:
     # summary comment queue a phantom run.
     concurrency:
       group: claude-review-${{ github.event.pull_request.number || github.event.issue.number }}
+    # Read-only, by design. The poster below holds the write permissions, in its own job, so a
+    # review that is talked into writing to the PR has no token that could: the containment is the
+    # token, not the tool allowlist.
     permissions:
       contents: read
-      pull-requests: write
+      pull-requests: read
       issues: read
-      # For the poster's claude-review commit status, nothing else.
-      statuses: write
     outputs:
       skip: ${{ (steps.pr-head.outputs.skip == 'true' || steps.preflight.outputs.skip == 'true') && 'true' || 'false' }}
+      sha: ${{ steps.preflight.outputs.sha }}
+      merge_base: ${{ steps.preflight.outputs.merge_base }}
+      outcome: ${{ steps.claude-review.outcome }}
 
     steps:
       # Full history, not depth-1: `gh pr diff` rejects a path filter, so a scoped
@@ -199,10 +203,9 @@ jobs:
           # at the gate with an empty record that reads as a clean review. The
           # allowlist carries no write verb: `gh pr comment`, `gh pr review` and the
           # inline-comment MCP tool are all absent, so the model reports findings and
-          # the poster below writes them. It narrows, it does not sandbox:
-          # `Bash(gh api repos/*)` matches on prefix, so a call appending `-X POST` is
-          # not excluded by it, and this step's token can write to the PR. What rules
-          # out a silent unreviewed PR is the poster, not this list. `git
+          # the poster job writes them. The list narrows; what contains is this job's
+          # token, which cannot write to the PR at all (`Bash(gh api repos/*)` matches
+          # on prefix, so a call appending `-X POST` is not excluded by the list). `git
           # fetch` and `git checkout` are deliberately absent too: the
           # full-history checkout above already carries every ref the protocol
           # reads, and the only checkout the model could want is reverting the
@@ -212,40 +215,106 @@ jobs:
             --allowedTools "Agent,Skill,Read,Glob,Grep,Bash(gh pr diff*),Bash(gh pr view*),Bash(gh api repos/*),Bash(git diff*),Bash(git status*),Bash(git log*),Bash(git show*),Bash(git rev-parse*),Bash(git rev-list*),Bash(git merge-base*),Bash(git grep*)"
             --json-schema '${{ steps.gen-schema.outputs.schema }}'
 
-      # The review's only writer. Ahead of the metrics step because the record's
-      # comment count is this step's hand-off, and on `always()` because a run
-      # that died still owes the PR a verdict: a green check on an untouched PR
-      # is exactly what a clean review looks like. This step fails red when it
-      # cannot post, so its silence is never mistaken for a clean bill.
-      - name: Post review
+      # The hand-off to the poster job, as files rather than job outputs: a findings
+      # record can be large, and job outputs are size-capped and string-typed. On
+      # `always()` because a run that died still owes the PR a verdict, and the poster
+      # builds that verdict from what is (or is not) in here.
+      - name: Save the review output
         if: always() && steps.pr-head.outputs.skip != 'true' && steps.preflight.outputs.skip != 'true'
         env:
           REVIEW_STRUCTURED_OUTPUT: ${{ steps.claude-review.outputs.structured_output }}
-          REVIEW_STEP_OUTCOME: ${{ steps.claude-review.outcome }}
+          REVIEW_EXECUTION_FILE: ${{ steps.claude-review.outputs.execution_file }}
+        run: |
+          mkdir -p review-output
+          printf '%s' "$REVIEW_STRUCTURED_OUTPUT" > review-output/structured-output.json
+          if [ -n "$REVIEW_EXECUTION_FILE" ] && [ -f "$REVIEW_EXECUTION_FILE" ]; then
+            cp "$REVIEW_EXECUTION_FILE" review-output/execution.json
+          fi
+
+      - name: Upload the review output
+        if: always() && steps.pr-head.outputs.skip != 'true' && steps.preflight.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: review-output
+          path: review-output/
+          if-no-files-found: warn
+
+  # The review's only writer, in its own job so the write permissions never sit in the same
+  # environment as the model. On `always()` because a run that died still owes the PR a verdict:
+  # a green check on an untouched PR is exactly what a clean review looks like. The job fails red
+  # when it cannot post, so its silence is never mistaken for a clean bill.
+  post-review:
+    needs: claude-review
+    if: always() && needs.claude-review.result != 'skipped' && needs.claude-review.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+      # For the claude-review commit status, nothing else.
+      statuses: write
+    steps:
+      # Full history: anchoring a finding to a line means diffing the reviewed commit against the
+      # merge base, and a shallow checkout cannot resolve it.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # --ignore-scripts: the install runs with this job's token in the environment.
+      - name: Install review tooling
+        run: npm install --global --ignore-scripts "agent-init@${AGENT_INIT_VERSION}"
+
+      # The exact commit the review ran against, never whatever the head is now: a push landing
+      # mid-review would otherwise shift every line number the findings point at. Absent (the
+      # review died before the preflight) leaves the checkout where it is; the poster then has no
+      # diff to anchor to and says so.
+      - name: Check out the reviewed commit
+        if: needs.claude-review.outputs.sha != ''
+        env:
+          REVIEW_COMMIT_SHA: ${{ needs.claude-review.outputs.sha }}
+        run: git -c advice.detachedHead=false checkout "$REVIEW_COMMIT_SHA"
+
+      # A run that died before uploading leaves no artifact, which is not this job's error: the
+      # poster reads that absence as "not reviewed" and posts exactly that.
+      - name: Download the review output
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: review-output
+          path: review-output
+
+      - name: Post review
+        env:
+          REVIEW_STRUCTURED_OUTPUT_FILE: ${{ github.workspace }}/review-output/structured-output.json
+          REVIEW_STEP_OUTCOME: ${{ needs.claude-review.outputs.outcome }}
           REVIEW_PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
-          REVIEW_COMMIT_SHA: ${{ steps.preflight.outputs.sha }}
-          REVIEW_MERGE_BASE: ${{ steps.preflight.outputs.merge_base }}
+          REVIEW_COMMIT_SHA: ${{ needs.claude-review.outputs.sha }}
+          REVIEW_MERGE_BASE: ${{ needs.claude-review.outputs.merge_base }}
           GH_TOKEN: ${{ github.token }}
           REVIEW_POSTED_OUTPUT: ${{ github.workspace }}/posted.json
         run: agent-init review post
 
       - name: Emit review metrics
-        # No record for a merged-PR or already-reviewed skip: a review that never
-        # ran is not an errored run, and an is_error record for it would pollute
-        # the retro's outage signal.
-        if: always() && steps.pr-head.outputs.skip != 'true' && steps.preflight.outputs.skip != 'true'
+        if: always()
         env:
-          REVIEW_EXECUTION_FILE: ${{ steps.claude-review.outputs.execution_file }}
-          REVIEW_STRUCTURED_OUTPUT: ${{ steps.claude-review.outputs.structured_output }}
-          REVIEW_STEP_OUTCOME: ${{ steps.claude-review.outcome }}
+          REVIEW_EXECUTION_FILE: ${{ github.workspace }}/review-output/execution.json
+          REVIEW_STRUCTURED_OUTPUT_FILE: ${{ github.workspace }}/review-output/structured-output.json
+          REVIEW_STEP_OUTCOME: ${{ needs.claude-review.outputs.outcome }}
           REVIEW_PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
-          REVIEW_COMMIT_SHA: ${{ steps.preflight.outputs.sha }}
+          REVIEW_COMMIT_SHA: ${{ needs.claude-review.outputs.sha }}
           REVIEW_POSTED_INPUT: ${{ github.workspace }}/posted.json
           REVIEW_METRICS_OUTPUT: ${{ github.workspace }}/review-metrics.json
         run: agent-init review metrics
 
       - name: Upload review metrics
-        if: always() && steps.pr-head.outputs.skip != 'true' && steps.preflight.outputs.skip != 'true'
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: review-metrics
@@ -258,7 +327,7 @@ jobs:
   # review steps above. `always()` because an errored run's record is the retro's
   # outage signal.
   persist-metrics:
-    needs: claude-review
+    needs: [claude-review, post-review]
     # `result != 'skipped'` matters: issue_comment fires on every PR comment, and
     # without it `always()` would spin this job up for each one claude-review skips.
     if: always() && needs.claude-review.result != 'skipped' && needs.claude-review.outputs.skip != 'true'
