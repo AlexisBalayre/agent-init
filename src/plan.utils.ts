@@ -11,11 +11,34 @@ export type Action =
   | { kind: "copy"; target: string; from: string }
   | { kind: "skip"; target: string; reason: string };
 
+/** Installed with every scaffold: it confirms the inferred gate and writes the map other skills read. */
+export const CORE_SKILLS = ["adapt-to-project"] as const;
+
 export const PACKS = {
-  thinking: ["grilling", "codebase-design", "domain-modeling", "handoff", "prototype", "zoom-out", "write-a-skill"],
-  engineering: ["tdd", "diagnose", "resolve-merge-conflicts"],
+  thinking: [
+    "grilling", "codebase-design", "domain-modeling", "handoff", "prototype", "zoom-out",
+    "writing-for-agents", "research", "wait-what", "to-questionnaire",
+  ],
+  engineering: ["tdd", "diagnosing-bugs", "resolving-merge-conflicts", "wizard"],
+  planning: ["to-spec", "to-tickets", "wayfinder", "implement"],
   review: ["review-changes", "address-review-comments"],
 } as const;
+
+/** Packs whose skills invoke another pack's skills by name, so installing one alone would dangle. */
+const PACK_REQUIRES: Partial<Record<Pack, Pack[]>> = {
+  planning: ["thinking", "engineering"],
+};
+
+export function resolvePacks(requested: Pack[]): Pack[] {
+  const wanted = new Set<Pack>();
+  const visit = (pack: Pack) => {
+    if (wanted.has(pack)) return;
+    wanted.add(pack);
+    for (const required of PACK_REQUIRES[pack] ?? []) visit(required);
+  };
+  requested.forEach(visit);
+  return (Object.keys(PACKS) as Pack[]).filter((pack) => wanted.has(pack));
+}
 
 /** The review pack dispatches named subagents, which only three of the five hosts support. */
 const PACKS_NEEDING_AGENTS: Pack[] = ["review"];
@@ -46,6 +69,9 @@ Shared instructions for every coding agent in this repository. Tool-specific lay
 rather than repeating it.
 
 - Conventions, skills and hooks live in \`.agents/\`.
+- The project's commands, trunk, tracker and doc locations are in the \`## Project map\` section of
+  this file. If it is missing, the \`adapt-to-project\` skill writes it; skills read it rather
+  than assuming a layout.
 - The quality gate reads \`.agents/quality.toml\`.
 - Hook policies are shared shell scripts; each tool has a thin adapter in
   \`.agents/hooks/adapters/\`. The contract is \`.agents/hooks/CONTRACT.md\`.
@@ -169,7 +195,8 @@ export function renderQualityToml(stacks: Stack[], confirmed: boolean): string {
 }
 
 export function buildPlan(options: PlanOptions): Action[] {
-  const { root, templates, tools, stacks, symlink, hooks, confirmed, packs } = options;
+  const { root, templates, tools, stacks, symlink, hooks, confirmed } = options;
+  const packs = resolvePacks(options.packs);
   const actions: Action[] = [];
   const abs = (p: string) => path.join(root, p);
 
@@ -199,14 +226,12 @@ export function buildPlan(options: PlanOptions): Action[] {
     }
   }
 
-  for (const pack of packs) {
-    for (const skill of PACKS[pack]) {
-      actions.push({
-        kind: "copy-dir",
-        target: `.agents/skills/${skill}`,
-        from: path.join(templates, "agents/skills", skill),
-      });
-    }
+  for (const skill of [...CORE_SKILLS, ...packs.flatMap((pack) => PACKS[pack])]) {
+    actions.push({
+      kind: "copy-dir",
+      target: `.agents/skills/${skill}`,
+      from: path.join(templates, "agents/skills", skill),
+    });
   }
 
   actions.push(

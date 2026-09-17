@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, renameSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -160,9 +160,39 @@ describe("doctor probes every adapter it can", () => {
 });
 
 describe("skill packs", () => {
-  it("installs nothing by default", () => {
+  it("installs no pack by default, only the skill that adapts the setup to the project", () => {
     runCli(["--dir", repo, "--yes"]);
     expect(existsSync(path.join(repo, ".agents/skills/tdd"))).toBe(false);
+    expect(existsSync(path.join(repo, ".agents/skills/adapt-to-project/SKILL.md"))).toBe(true);
+  });
+
+  // wayfinder invokes grilling and research, implement invokes tdd: a planning pack without
+  // them would name skills that are not there.
+  it("installs the packs that planning skills invoke", () => {
+    const { stdout } = runCli(["--dir", repo, "--yes", "--packs", "planning"]);
+    expect(existsSync(path.join(repo, ".agents/skills/wayfinder/SKILL.md"))).toBe(true);
+    expect(existsSync(path.join(repo, ".agents/skills/grilling/SKILL.md"))).toBe(true);
+    expect(existsSync(path.join(repo, ".agents/skills/tdd/SKILL.md"))).toBe(true);
+    expect(stdout).toContain(".agents/skills/grilling");
+  });
+
+  it("names every shipped skill after its directory", () => {
+    const root = path.resolve("templates/agents/skills");
+    for (const entry of readdirSync(root, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const skill = readFileSync(path.join(root, entry.name, "SKILL.md"), "utf8");
+      expect(skill, entry.name).toMatch(new RegExp(`^---\nname: ${entry.name}\n`));
+    }
+  });
+
+  it("ships every template skill in exactly one pack", async () => {
+    const { CORE_SKILLS, PACKS } = await import("../src/plan.utils.js");
+    const shipped = [...CORE_SKILLS, ...Object.values(PACKS).flat()].sort();
+    const onDisk = readdirSync(path.resolve("templates/agents/skills"), { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort();
+    expect(shipped).toEqual(onDisk);
   });
 
   it("installs only the requested packs", () => {

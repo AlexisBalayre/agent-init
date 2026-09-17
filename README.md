@@ -45,7 +45,7 @@ opencode and Mistral Vibe. Only Claude Code and Cursor need the symlink.
 | **One content copy** | `.agents/` is canonical; symlinks reconcile, `--no-symlink` copies. |
 | **Three normalised hook events** | `pre-tool:bash`, `post-edit`, `turn-end`; policies written once. |
 | **Stack-agnostic quality gate** | Commands live in `.agents/quality.toml`, per-path array. |
-| **Core plus opt-in packs** | `--packs thinking,engineering,review`. |
+| **Core plus opt-in packs** | `adapt-to-project` always; `--packs thinking,engineering,planning,review`. |
 | **Honest tiers** | What a tool cannot do is documented, not emulated. |
 
 ## Support matrix
@@ -64,7 +64,12 @@ so shared policies are written once and a per-tool adapter speaks each host's pr
 
 ## Skill packs
 
-Skills are opt-in and off by default:
+One skill ships with every scaffold: **`adapt-to-project`**. Run it once after `init`. It runs
+each inferred quality-gate command, activates the ones that pass once you confirm them, and writes
+a **project map** into `AGENTS.md`: the lint, typecheck and test commands, the trunk, the issue
+tracker, and where the glossary, ADRs and conventions live.
+
+Everything else is opt-in and off by default:
 
 ```bash
 npx agent-init --packs thinking,engineering
@@ -72,13 +77,20 @@ npx agent-init --packs thinking,engineering
 
 | Pack | Skills |
 | :-- | :-- |
-| `thinking` | `grilling`, `codebase-design`, `domain-modeling`, `prototype`, `handoff`, `zoom-out`, `write-a-skill` |
-| `engineering` | `tdd`, `diagnose`, `resolve-merge-conflicts` |
+| `thinking` | `grilling`, `codebase-design`, `domain-modeling`, `prototype`, `handoff`, `zoom-out`, `writing-for-agents`, `research`, `wait-what`, `to-questionnaire` |
+| `engineering` | `tdd`, `diagnosing-bugs`, `resolving-merge-conflicts`, `wizard` |
+| `planning` | `to-spec`, `to-tickets`, `wayfinder`, `implement`; installs `thinking` and `engineering` too, since it invokes their skills |
 | `review` | `review-changes` (six-area multi-agent review) + `address-review-comments`, and the seven reviewer subagents they dispatch |
 
 They install once into `.agents/skills/`, where three of the five tools find them with no further
 wiring. Each is written against no particular stack: where a skill needs project conventions, a
-task runner or a tracker, it asks the project rather than assuming one.
+command or a tracker, it reads the project map rather than assuming a layout. The planning skills
+publish to whatever issue tracker the session can reach, or write local markdown under
+`docs/plans/` when there is none.
+
+Nine of these skills are meant to run only when you name them. Claude Code and Cursor honour that;
+on Codex, opencode and Mistral Vibe the model can also fire them on its own. See
+[the matrix](docs/capability-matrix.md#skill-invocation-control).
 
 The `review` pack also installs `.agents/agents/` and links it into Claude Code, opencode and
 Cursor. Codex and Mistral Vibe have no project-scoped subagents, so nothing is emitted for them and
@@ -101,7 +113,7 @@ agent-init [init]      Scaffold .agents/ and wire each detected tool
 agent-init doctor      Probe the wiring and verify hooks actually block
 
 --tools <list>     claude-code, opencode, codex, mistral-vibe, cursor (default: detected)
---packs <list>     thinking, engineering, review (default: none)
+--packs <list>     thinking, engineering, planning, review (default: none)
 --dir <path>       Target repository (default: cwd)
 --no-symlink       Copy shared content instead of symlinking it
 --skip-hooks       Scaffold content but wire no hooks
