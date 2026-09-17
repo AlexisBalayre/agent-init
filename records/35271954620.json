@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-09-17T20:47:06.059Z",
+  "repository": "AlexisBalayre/agent-init",
+  "run_id": "35271954620",
+  "run_url": "https://github.com/AlexisBalayre/agent-init/actions/runs/35271954620",
+  "actor": "AlexisBalayre",
+  "commit_sha": "1bcfef414df2fd6eaec8734c4d9359a2f0c72b4e",
+  "source": "pr",
+  "pr_number": 14,
+  "action": "review",
+  "reviewers_spawned": [
+    "context",
+    "conventions",
+    "docs"
+  ],
+  "reviewers_skipped": [
+    "correctness",
+    "security",
+    "maintainability"
+  ],
+  "review_mode": "incremental",
+  "incremental_from_sha": "55fa2ac62e3441788aa673801ff84656f768d99d",
+  "prior_importants": [],
+  "findings": [
+    {
+      "file": "templates/agents/skills/pr-ci-review/SKILL.md",
+      "line": "46",
+      "area": "conventions",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The new sentence \"The restored set is per repository: the workflow's `RESTORE_PATHS` names it...\" reads as scoping the whole ten-path restored set (enumerated in the sentence immediately before it: `.claude/`, `.mcp.json`, `.claude.json`, `.gitmodules`, `.ripgreprc`, `CLAUDE.md`, `CLAUDE.local.md`, `.husky`, plus `AGENTS.md`/`.agents/`) to `RESTORE_PATHS`, but `RESTORE_PATHS` (confirmed `AGENTS.md .agents templates` in this repo's rendered workflow) only names the second, workflow-step-driven group — the first eight paths are a fixed list baked into `claude-code-action` itself, not configurable per repo. `docs/design/0001-architecture.md` (~line 436-447) draws this exact split more precisely: \"The list is the workflow's RESTORE_PATHS\" refers only to the extension beyond the action's own fixed restore. A validator confirmed the imprecision is real but downgraded from important to nit: the bullet's own preceding sentence already spells out the full ten-path list by name, so an orchestrator reading the whole bullet (not just this clause) still has the complete picture, making the misread unlikely to actually cause a briefing gap in practice.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "scripts/render-review-workflow.mjs",
+      "line": "83",
+      "area": "conventions",
+      "confidence": "high",
+      "tag": "pre-existing",
+      "description": "Not an issue: the new comment `// Nothing to pin: the tooling is built here, not installed from npm.` was checked against AGENTS.md's comment rule and the sibling TRANSFORMS comments and found compliant (genuine non-obvious why, matches the file's existing comment style) and accurate against HEADER's dogfooding note #1. Recorded here only as a negative confirmation, not a defect.",
+      "body": null,
+      "suggestion": null
+    }
+  ],
+  "refuted_findings": [],
+  "process_issues": [],
+  "comments_posted_actual": 0,
+  "is_error": false,
+  "cost_usd": 2.3786618999999996,
+  "duration_ms": 532374,
+  "num_turns": 32,
+  "tokens": {
+    "input": 41,
+    "output": 26735,
+    "cache_read": 1121020,
+    "cache_creation": 68676,
+    "total": 1216472
+  }
+}
