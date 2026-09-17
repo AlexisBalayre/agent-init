@@ -106,6 +106,7 @@ agent-init doctor      Probe the wiring and verify hooks actually block
 --no-symlink       Copy shared content instead of symlinking it
 --skip-hooks       Scaffold content but wire no hooks
 --dry-run          Print the plan, write nothing
+--check            Exit non-zero if the tree differs from what init would emit
 --yes              Apply without confirming
 --json             Machine-readable output
 --force            Proceed even though the git tree is dirty
