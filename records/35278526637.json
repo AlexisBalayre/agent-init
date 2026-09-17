@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-09-17T21:58:09.905Z",
+  "repository": "AlexisBalayre/agent-init",
+  "run_id": "35278526637",
+  "run_url": "https://github.com/AlexisBalayre/agent-init/actions/runs/35278526637",
+  "actor": "AlexisBalayre",
+  "commit_sha": "623426b4fec98c3cb1ba0b7a906abda79caea8a9",
+  "source": "pr",
+  "pr_number": 16,
+  "action": "review",
+  "reviewers_spawned": [
+    "docs",
+    "conventions"
+  ],
+  "reviewers_skipped": [
+    "correctness",
+    "security",
+    "context",
+    "maintainability"
+  ],
+  "review_mode": "incremental",
+  "incremental_from_sha": "fa0db252e2ec18b5a9bd4f251e04aa255a908339",
+  "prior_importants": [
+    {
+      "file": "docs/capability-matrix.md",
+      "line": "80",
+      "status": "resolved"
+    }
+  ],
+  "findings": [
+    {
+      "file": "docs/design/0001-architecture.md",
+      "line": "351-354",
+      "area": "docs",
+      "confidence": "high",
+      "tag": "important",
+      "description": "The fix-up's new parenthetical misattributes reaching fifteen user-invoked skills to decision 19 alone: decision 19's six skills include `caveman` and `pr-description`, neither of which is user-invoked (no `disable-model-invocation` key), so it only takes the count from 9 to 13; decision 21 (restoring `pr-ci-review` and `review-retro`) is what closes the gap to 15.",
+      "body": "The fix-up commit's new parenthetical says the jump from nine to fifteen user-invoked skills happens \"(fifteen once decision 19 landed the rest of the template's skills; the frontmatter is the authoritative list)\". Checked against the frontmatter this line calls authoritative: Decision 19 lands six skills (`grill-me`, `grill-with-docs`, `improve-codebase-architecture`, `caveman`, `find-dead-code`, `pr-description`), but `caveman` and `pr-description` carry no `disable-model-invocation` key in their real frontmatter — they're model-invoked. So decision 19 only adds 4, taking the count from 9 to 13, not 15. The remaining 2 (`pr-ci-review`, `review-retro`) are what decision 21 restores (\"Decision 16 dropped `pr-ci-review` and `review-retro` ... so the pipeline ships too\"), not decision 19.\n\nhttps://github.com/AlexisBalayre/agent-init/blob/623426b4fec98c3cb1ba0b7a906abda79caea8a9/docs/design/0001-architecture.md#L351-L354",
+      "suggestion": "**Cost accepted: user-only skills are not user-only everywhere.** Nine skills at this point are\nmeant to fire only when a human names them, marked with `disable-model-invocation: true` (fifteen\nonce decision 19 added four more and decision 21 restored `pr-ci-review` and `review-retro`; the\nfrontmatter is the authoritative list). Verified 2026-09-17, only"
+    },
+    {
+      "file": "templates/agents/skills/writing-for-agents/SKILL-MECHANICS.md",
+      "line": "10",
+      "area": "conventions",
+      "confidence": "high",
+      "tag": "important",
+      "description": "The new sentence closing the Codex-second-step gap cites `docs/capability-matrix.md`, but this file is scaffolded into consumer repos via the `thinking` pack while `docs/capability-matrix.md` is agent-init's own internal doc that never ships there — a dangling reference and a direct instance of what Decision 7 forbids (\"Ported skills must not reference repo-specific convention paths\").",
+      "body": "The new sentence closing the Codex-second-step gap cites `docs/capability-matrix.md` as where opencode/Vibe's behavior is recorded. But this file (`SKILL-MECHANICS.md`) ships into consumer repositories as part of the `thinking` pack (`src/plan.utils.ts:20`, copied via the pack's copy-dir action) — `docs/capability-matrix.md` is agent-init's own internal doc and is never scaffolded there. This is a direct instance of what Decision 7 forbids: \"Ported skills must not reference repo-specific convention paths.\" A consumer who follows the citation in their own repo finds nothing there.\n\nhttps://github.com/AlexisBalayre/agent-init/blob/623426b4fec98c3cb1ba0b7a906abda79caea8a9/templates/agents/skills/writing-for-agents/SKILL-MECHANICS.md#L10",
+      "suggestion": "- A **user-invoked** skill strips the description from the agent's reach: only the human typing its name can invoke it, and no other skill can. Zero context load, but it spends cognitive load: you are the index that must remember it exists. Mechanics: set `disable-model-invocation: true`; the `description` becomes human-facing: a one-line summary, trigger lists stripped. That key is enough on Claude Code and Cursor. Codex ignores it and reads `agents/openai.yaml` beside the `SKILL.md` instead, so a user-invoked skill needs that file too, carrying `policy:` / `  allow_implicit_invocation: false`; opencode and Mistral Vibe honour neither, and the model can fire the skill there. Copy the file from any user-invoked skill: a test asserts every one of them has it, byte for byte, because Codex silently ignores a copy it cannot parse."
+    },
+    {
+      "file": "templates/agents/skills/writing-for-agents/SKILL-MECHANICS.md",
+      "line": "10",
+      "area": "docs",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The new sentence says \"a test asserts every one of them has it, byte for byte\", but `test/skill-invocation.test.ts` strips comments and blank lines and only compares the two-line `policy:` payload (comments are explicitly free to vary); Decision 22 elsewhere in the repo already describes this correctly as \"line for line\", which this sentence should match.",
+      "body": null,
+      "suggestion": null
+    }
+  ],
+  "refuted_findings": [],
+  "process_issues": [
+    {
+      "component": "platform",
+      "description": "Both reviewer subagents and the orchestrator hit the sandbox's approval gate on plain multi-line Bash constructs (for loops, chained && / ; commands) even though read-only; worked around with single unchained git show/grep commands per file. Same friction as the prior review round on this PR."
+    }
+  ],
+  "comments_posted_actual": 2,
+  "is_error": false,
+  "cost_usd": 3.328694449999999,
+  "duration_ms": 645391,
+  "num_turns": 51,
+  "tokens": {
+    "input": 57,
+    "output": 29773,
+    "cache_read": 1796137,
+    "cache_creation": 79496,
+    "total": 1905463
+  }
+}
