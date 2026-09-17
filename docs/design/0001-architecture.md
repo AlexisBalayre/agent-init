@@ -440,7 +440,10 @@ symlinks into `.agents/`, and `.claude/settings.json` runs hook adapters from `.
 none of that is covered by the action's list, so a PR could have supplied its own orchestrator,
 reviewer manifests or hook scripts to a job holding the review token. The emitted workflow extends
 the action's own treatment to `AGENTS.md` and `.agents/`, snapshotting the PR's copy under
-`.claude-pr/` for reviewers to read unexecuted. The test drives the workflow's own `run:` block, so
+`.claude-pr/` for reviewers to read unexecuted. The list is the workflow's `RESTORE_PATHS`,
+because restoring a symlink does not restore what it points at: a repository whose
+`.agents/skills` links into another directory (this one links into `templates/`) must add that
+directory, or the PR's copy of a skill is still what runs. The test drives the workflow's own `run:` block, so
 the shell that ships is the shell asserted.
 
 **Reviewer model tiers are set at spawn time, not in frontmatter.** Decision 8 strips `model:` from
