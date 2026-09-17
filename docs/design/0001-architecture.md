@@ -381,3 +381,26 @@ vendor's tools, and a fallback wherever a step assumes sub-agents.
 security stack, and `obsidian-vault` and `daily-note` one person's notes (decision 7).
 `backfill-issues` is built on one tracker's model of cycles, estimates and labels, which a
 host-neutral rewrite would have to invent (decision 7).
+
+## 20. Worktree scripts, finally in core
+
+Date: 2026-09-17
+
+Decision 7 listed worktree scripts in `core`; they were never built. They now ship as
+`.agents/scripts/worktree-create.sh` and `worktree-clean.sh`, ported from the template: create puts
+each change in `.worktrees/<name>` on a `<prefix>/<name>` branch and installs dependencies inside
+it; clean removes prefixed worktrees whose remote branch is gone.
+
+- **Config lives in a committed `.agents/worktree.env`**, created once and never overwritten, like
+  `quality.toml`. The install command is project knowledge every clone needs, so it cannot live in
+  `.env`, which is per-machine and usually ignored. It is sourced as shell, which is the same trust
+  as running the script itself.
+- **A failed install fails the create.** The template's script let the install error abort under
+  `set -e` with no message saying which step failed; an agent reading only the exit code could
+  still start work in a worktree with no dependencies. The script now names the failed command.
+- **`.gitignore` gets a managed block** for `.worktrees/`, spliced with `#` markers, the same
+  mechanism as the TOML blocks. The splice flag is renamed from `toml` to `hashComments` to say so.
+- **Dropped from the template's script:** the CodeGraph index step, since agent-init does not ship
+  CodeGraph.
+- **Not added:** a git-safety rule blocking `git checkout -b` on the trunk in favour of worktrees.
+  It would force one branching style on every project the hook lands in.
