@@ -80,6 +80,7 @@ const HEADER_PATTERN = /^#[\s\S]*?(?=^name: Claude Code Review$)/m;
 /** Each transform is one documented difference; a miss fails loudly rather than rendering silently. */
 const TRANSFORMS = [
   [HEADER_PATTERN, `${HEADER}\n`],
+  // Nothing to pin: the tooling is built here, not installed from npm.
   [
     /  # The review tooling ships inside agent-init[\s\S]*?  AGENT_INIT_VERSION: "__AGENT_INIT_VERSION__"\n/,
     "",
