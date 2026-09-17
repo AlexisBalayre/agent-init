@@ -6,6 +6,7 @@ import {
   type ReviewSummary,
   type Tokens,
 } from "./review-summary.schemas.js";
+import { structuredOutput } from "./structured-output.utils.js";
 
 /**
  * Builds the normalized review-metrics record from a CI review run:
@@ -188,7 +189,7 @@ export function main(): void {
   const prNumber = /^\d+$/.test(prRaw) ? Number.parseInt(prRaw, 10) : null;
   const commitSha = env.REVIEW_COMMIT_SHA ?? env.GITHUB_SHA ?? null;
 
-  const summary = parseSummary(env.REVIEW_STRUCTURED_OUTPUT ?? "");
+  const summary = parseSummary(structuredOutput(env));
   const platform = platformMetrics(env.REVIEW_EXECUTION_FILE);
 
   // A failed action step often produces no execution log, so its result cannot
