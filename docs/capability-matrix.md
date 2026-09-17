@@ -68,19 +68,34 @@ Some shipped skills are meant to run only when a human names them: the four `pla
 | :-- | :-- | :-- | :-- |
 | **Claude Code** | **yes** (D) | also `skillOverrides: "user-invocable-only"` in settings (D) | `/skill-name` (D) |
 | **Cursor** | **yes** (D) | — | `/skill-name` (D) |
-| **Codex** | no: key ignored (S) | `agents/openai.yaml` in the skill dir, `policy.allow_implicit_invocation: false` (D) | `$skill-name`, or `/skills` (D) |
-| **opencode** | no: key ignored (D) | permission `"skill": {"<name>": "deny"}` hides it from the model; the `/skill-name` command stays (S, untested) | `/skill-name` (S) |
+| **Codex** | no: key ignored (S) | **emitted**: `agents/openai.yaml` beside each user-invoked `SKILL.md`, `policy.allow_implicit_invocation: false` (D + S) | `$skill-name`, or `/skills` (D) |
+| **opencode** | no: key ignored (D) | `permission.skill.<name>: "deny"` in `opencode.json` removes it from the model's list (D). Not emitted: see the gap below | `/skill-name` (S) |
 | **Mistral Vibe** | no: key ignored (S) | none. `user-invocable: false` is the opposite switch (model-only) | `/skill-name` (D) |
 
 Unknown frontmatter keys are ignored by Codex, opencode and Vibe, so the key does no harm; it
 also does nothing there.
 
+**What the Codex file buys, read in source at `openai/codex@fcf0545`:** `hidden_from_prompt()`
+clears `prompt_visible` (`ext/skills/src/provider/host.rs:147-149`,
+`ext/skills/src/loader/catalog.rs:256-262`), and every model-facing surface filters on
+`is_model_visible()`, so the description is never injected. Explicit selection filters on `enabled`
+only (`ext/skills/src/selection.rs:66-75`), so `$skill-name` still works. The file is read from
+`<skill>/agents/openai.yaml` (`ext/skills/src/loader/mod.rs:20-21`), and a file Codex cannot parse
+is **warned about and ignored** (`ext/skills/src/loader/metadata.rs:117-140`), which silently
+restores implicit invocation. A test asserts the emitted payload for that reason.
+
 ## Known gaps
 
-- **User-invoked skills are model-invocable on Codex, opencode and Mistral Vibe.** Their
-  descriptions load into context and the model may fire them unprompted. Nothing is emitted to
-  close this yet: Codex's `agents/openai.yaml` and opencode's permission are the native routes and
-  are unbuilt; Vibe has no route. See the table above.
+- **User-invoked skills are model-invocable on opencode and Mistral Vibe.** Their descriptions load
+  into context and the model may fire them unprompted. Closed for Codex, which now gets
+  `agents/openai.yaml` per user-invoked skill.
+- **opencode's switch is not emitted, on purpose.** `permission.skill.<name>: "deny"` hides a skill
+  from the model, which is documented. That a human can still run `/skill-name` afterwards is not:
+  it holds in source (`packages/opencode/src/command/index.ts:134-158` builds the command list from
+  `skill.all()` with no permission check, independently of the filter at
+  `src/skill/index.ts:314`), but an undocumented behaviour can change in a patch release, and the
+  failure mode is a skill no one can reach, which is worse than the gap. Revisit when opencode
+  documents slash-command invocation of skills.
 
 - **opencode cannot enforce at turn-end.** `session.idle` fires after the turn, and opencode
   offers no documented way to feed hook output back into the agent's context, so a failing gate is
