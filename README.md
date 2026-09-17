@@ -47,7 +47,7 @@ opencode and Mistral Vibe. Only Claude Code and Cursor need the symlink.
 | **One content copy** | `.agents/` is canonical; symlinks reconcile, `--no-symlink` copies. |
 | **Three normalised hook events** | `pre-tool:bash`, `post-edit`, `turn-end`; policies written once. |
 | **Stack-agnostic quality gate** | Commands live in `.agents/quality.toml`, per-path array. |
-| **Core plus opt-in packs** | `adapt-to-project` always; `--packs thinking,engineering,planning,review`. |
+| **Core plus opt-in packs** | `adapt-to-project` always; `--packs thinking,engineering,planning,review,ci-review`. |
 | **Honest tiers** | What a tool cannot do is documented, not emulated. |
 
 ## Support matrix
@@ -83,6 +83,7 @@ npx agent-init --packs thinking,engineering
 | `engineering` | `tdd`, `diagnosing-bugs`, `resolving-merge-conflicts`, `wizard`, `find-dead-code` |
 | `planning` | `to-spec`, `to-tickets`, `wayfinder`, `implement`; installs `thinking` and `engineering` too, since it invokes their skills |
 | `review` | `review-changes` (six-area multi-agent review), `address-review-comments`, `pr-description`, and the seven reviewer subagents they dispatch |
+| `ci-review` | `pr-ci-review`, `review-retro`, and a GitHub Actions workflow that reviews every PR; installs `review` too. Claude Code only, and it needs setup: see below |
 
 They install once into `.agents/skills/`, where three of the five tools find them with no further
 wiring. Each is written against no particular stack: where a skill needs project conventions, a
@@ -102,6 +103,27 @@ mechanism, never silently to nothing.
 **Prerequisites:** Node >= 20 to run the scaffolder, `jq` and bash >= 3.2 on any machine where the
 hooks run.
 
+## Reviewing every pull request
+
+`--packs ci-review` emits `.github/workflows/claude-code-review.yml`: a deterministic preflight
+decides full versus incremental, Claude Code reviews the PR through the `review` pack's six
+reviewers, and a poster writes the verdict. **The model has no write access to the PR.** It emits a
+structured record; the poster renders it, anchors each important finding to a line in the diff, and
+pins a `claude-review` commit status. A run that dies still posts "this PR has not been reviewed",
+because green silence reads exactly like a clean review.
+
+The workflow's deterministic steps are `agent-init review preflight|schema|post|metrics`, installed
+from npm at the version that scaffolded the file, so the repository gets a workflow and no
+toolchain of its own. **It is inert until agent-init is published to npm** (this is v0.0.0), and
+the install step fails red until then.
+
+Two setup steps, both in the comment at the top of the emitted workflow: add the
+`CLAUDE_CODE_OAUTH_TOKEN` secret, and create the `ci/review-metrics` orphan branch that stores each
+run's record for `review-retro` to mine.
+
+GitHub and Claude Code only, because it runs through `anthropics/claude-code-action`. On any other
+host, `review-changes` reviews the same six areas locally.
+
 ## Install safety
 
 Refuses a dirty git tree without `--force` — git is the backup. Existing markdown is edited only
@@ -113,9 +135,10 @@ a text-spliced managed block so comments survive. Re-runs are idempotent.
 ```
 agent-init [init]      Scaffold .agents/ and wire each detected tool
 agent-init doctor      Probe the wiring and verify hooks actually block
+agent-init review <step>   CI review tooling, run by the emitted workflow
 
 --tools <list>     claude-code, opencode, codex, mistral-vibe, cursor (default: detected)
---packs <list>     thinking, engineering, planning, review (default: none)
+--packs <list>     thinking, engineering, planning, review, ci-review (default: none)
 --dir <path>       Target repository (default: cwd)
 --no-symlink       Copy shared content instead of symlinking it
 --skip-hooks       Scaffold content but wire no hooks

@@ -1,5 +1,5 @@
 import path from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import type { Stack, Tool } from "./detect.utils.js";
 
 export type Action =
@@ -23,11 +23,13 @@ export const PACKS = {
   engineering: ["tdd", "diagnosing-bugs", "resolving-merge-conflicts", "wizard", "find-dead-code"],
   planning: ["to-spec", "to-tickets", "wayfinder", "implement"],
   review: ["review-changes", "address-review-comments", "pr-description"],
+  "ci-review": ["pr-ci-review", "review-retro"],
 } as const;
 
 /** Packs whose skills invoke another pack's skills by name, so installing one alone would dangle. */
 const PACK_REQUIRES: Partial<Record<Pack, Pack[]>> = {
   planning: ["thinking", "engineering"],
+  "ci-review": ["review"],
 };
 
 export function resolvePacks(requested: Pack[]): Pack[] {
@@ -62,6 +64,8 @@ export type PlanOptions = {
   /** Gate commands nobody confirmed are written commented out, never silently active. */
   confirmed: boolean;
   packs: Pack[];
+  /** Pinned into emitted CI, which installs this exact agent-init to run its review tooling. */
+  version: string;
 };
 
 const AGENTS_BODY = `## Agent setup
@@ -208,7 +212,7 @@ export function renderQualityToml(stacks: Stack[], confirmed: boolean): string {
 }
 
 export function buildPlan(options: PlanOptions): Action[] {
-  const { root, templates, tools, stacks, symlink, hooks, confirmed } = options;
+  const { root, templates, tools, stacks, symlink, hooks, confirmed, version } = options;
   const packs = resolvePacks(options.packs);
   const actions: Action[] = [];
   const abs = (p: string) => path.join(root, p);
@@ -259,6 +263,18 @@ export function buildPlan(options: PlanOptions): Action[] {
       ? { kind: "skip", target: ".agents/quality.toml", reason: "already configured" }
       : { kind: "create", target: ".agents/quality.toml", content: renderQualityToml(stacks, confirmed) },
   );
+
+  if (packs.includes("ci-review")) {
+    const target = ".github/workflows/claude-code-review.yml";
+    if (!tools.includes("claude-code")) {
+      actions.push({ kind: "skip", target, reason: "the CI review runs through claude-code-action; add --tools claude-code" });
+    } else if (existsSync(abs(target))) {
+      actions.push({ kind: "skip", target, reason: "already present; never overwritten" });
+    } else {
+      const workflow = readFileSync(path.join(templates, "github/workflows/claude-code-review.yml"), "utf8");
+      actions.push({ kind: "create", target, content: workflow.replaceAll("__AGENT_INIT_VERSION__", version) });
+    }
+  }
 
   actions.push(spliceOrCreate(root, "AGENTS.md", AGENTS_BODY));
 
