@@ -42,6 +42,9 @@ Shared instructions for every coding agent in this repository. Tool-specific lay
 rather than repeating it.
 
 - Conventions, skills and hooks live in `.agents/`.
+- The project's commands, trunk, tracker and doc locations are in the `## Project map` section of
+  this file. If it is missing, the `adapt-to-project` skill writes it; skills read it rather
+  than assuming a layout.
 - The quality gate reads `.agents/quality.toml`.
 - Hook policies are shared shell scripts; each tool has a thin adapter in
   `.agents/hooks/adapters/`. The contract is `.agents/hooks/CONTRACT.md`.

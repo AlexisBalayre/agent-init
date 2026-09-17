@@ -301,3 +301,60 @@ because it stops anyone from noticing the gap.
 Still unbuilt and now recorded honestly: the version stamp (decisions 1 and 9), a symlink-failure
 fallback for Windows (decision 3), and interactive tool/pack selection (decision 10 — today the
 interactive path is a single confirm, and every option is reachable by flag).
+
+## 18. Tracking the September 2026 template, and a project map instead of a layout
+
+Date: 2026-09-17
+
+The skills and reviewers were ported from a Claude Code configuration template that has since
+refreshed its skills from upstream (mattpocock/skills), adopted upstream's names and added nine
+skills. This decision records how that version was taken in, and what had to change for the port
+to stay portable.
+
+**Upstream names are adopted.** `diagnose`, `resolve-merge-conflicts` and `write-a-skill` become
+`diagnosing-bugs`, `resolving-merge-conflicts` and `writing-for-agents`. A one-to-one name mapping
+makes the next sync a diff rather than a translation. Nothing is published yet, so no installed
+base carries the old names.
+
+**The upstream template assumes a layout; agent-init cannot.** Its skills now read commands from
+`.claude/project.env`, docs from a fixed `docs/` tree, the trunk from config, and a tracker through
+`.env` identifiers. A repository scaffolded by agent-init has none of these. The first port
+answered the same problem with "ask the project" in each skill, which made every skill ask. This
+one gives them a single place to look: a **project map**, a table in `AGENTS.md` outside the managed
+markers, naming the commands, the trunk, the tracker and where each kind of doc lives. Every host
+reads `AGENTS.md`, so the map costs no wiring.
+
+**`adapt-to-project` ships in core, not in a pack.** The map needs a writer, and decision 10 left a
+gap: an agent running `init` without a TTY gets inferred gate commands written commented out, with
+nothing that ever finishes the job. The skill closes both: it runs each inferred command, activates
+only what passes once the user confirms, and writes the map. It also sets `GIT_TRUNK` when the trunk
+is not `main`, since git-safety otherwise guards a branch the project does not use. Skills stay
+opt-in; this is the one that makes the rest work.
+
+- **Rejected:** a `test` key in `quality.toml`. The gate runs at every turn end; tests do not
+  belong there, and a key the gate ignores is a trap.
+- **Rejected:** shipping `.claude/project.env`. It is one tool's directory and would be a second
+  config beside `quality.toml`.
+
+**`planning` requires `thinking` and `engineering`.** `wayfinder` invokes `grilling`,
+`domain-modeling`, `prototype` and `research`; `implement` invokes `tdd`. Installing `planning`
+alone would ship skills that name skills that are not there, so the plan pulls the required packs
+in and lists them. `tdd`'s pointer to `codebase-design` is an optional aside and already shipped
+that way, so `engineering` stays standalone.
+
+**Tracker wiring is host-neutral.** Upstream names one vendor's MCP tools and `TRACKER_*` variables,
+which the leak audit rejects by design. The planning skills instead use whatever tracker the session
+can reach, take identifiers from the map or ask once, and fall back to local markdown under
+`docs/plans/`. Upstream keeps that directory out of git with a pre-commit hook agent-init does not
+emit, so the skills ask whether to commit or ignore it rather than claiming a guard that is absent.
+
+**Cost accepted: user-only skills are not user-only everywhere.** Nine skills are meant to fire only
+when a human names them, marked with `disable-model-invocation: true`. Verified 2026-09-17, only
+Claude Code and Cursor honour it. Codex and opencode each have a different native switch, unbuilt;
+Mistral Vibe has none. On those three the skills are model-invocable and their descriptions load
+into context. The gap is recorded in the capability matrix rather than emulated.
+
+**Not taken in:** upstream's convention spot-check, file-naming, generated-path and comment-pruner
+hooks. They would fit the three normalised events, but each is a new policy with its own blocking
+and false-positive trade-offs, not a refresh of one already shipped, so each is its own port. Its
+personal-integration skills stay out under decision 7.
