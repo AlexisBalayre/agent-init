@@ -3,4 +3,7 @@ dist/
 *.log
 .DS_Store
 .env
+
+# <!-- agent-init:start -->
 .worktrees/
+# <!-- agent-init:end -->

@@ -381,3 +381,72 @@ vendor's tools, and a fallback wherever a step assumes sub-agents.
 security stack, and `obsidian-vault` and `daily-note` one person's notes (decision 7).
 `backfill-issues` is built on one tracker's model of cycles, estimates and labels, which a
 host-neutral rewrite would have to invent (decision 7).
+
+## 20. Worktree scripts, finally in core
+
+Date: 2026-09-17
+
+Decision 7 listed worktree scripts in `core`; they were never built. They now ship as
+`.agents/scripts/worktree-create.sh` and `worktree-clean.sh`, ported from the template: create puts
+each change in `.worktrees/<name>` on a `<prefix>/<name>` branch and installs dependencies inside
+it; clean removes prefixed worktrees whose remote branch is gone.
+
+- **Config lives in a committed `.agents/worktree.env`**, created once and never overwritten, like
+  `quality.toml`. The install command is project knowledge every clone needs, so it cannot live in
+  `.env`, which is per-machine and usually ignored. It is sourced as shell, which is the same trust
+  as running the script itself.
+- **A failed install fails the create.** The template's script let the install error abort under
+  `set -e` with no message saying which step failed; an agent reading only the exit code could
+  still start work in a worktree with no dependencies. The script now names the failed command.
+- **`.gitignore` gets a managed block** for `.worktrees/`, spliced with `#` markers, the same
+  mechanism as the TOML blocks. The splice flag is renamed from `toml` to `hashComments` to say so.
+- **Dropped from the template's script:** the CodeGraph index step, since agent-init does not ship
+  CodeGraph.
+- **Not added:** a git-safety rule blocking `git checkout -b` on the trunk in favour of worktrees.
+  It would force one branching style on every project the hook lands in.
+
+## 21. The CI review pipeline, and where its Node lives
+
+Date: 2026-09-17
+
+Decision 16 dropped `pr-ci-review` and `review-retro` because they presume a GitHub Actions
+pipeline, and shipping a skill that reads plausibly and cannot work is the failure this project
+rejects. That reasoning holds only while the pipeline is absent, so the pipeline ships too, as the
+opt-in `ci-review` pack: the two skills plus `.github/workflows/claude-code-review.yml`. The pack
+requires `review`, whose reviewer agents it dispatches.
+
+**The deterministic half lives in agent-init, not in the user's repository.** The template carries
+~1,000 lines of TypeScript, a `zod` dependency and a pnpm lockfile under `tools/review/`. Copying
+that would break the Node-free rule for every repo that enables the pack, including Python and Go
+ones. Instead the tooling is `agent-init review preflight|schema|post|metrics`, and the emitted
+workflow installs `agent-init` pinned to the version that scaffolded it. What lands in the
+repository is one YAML file. Node exists only on the CI runner, which already had to install it.
+
+- **Cost accepted: the workflow is inert until agent-init is published.** `npm install --global
+  agent-init@0.0.0` cannot resolve, so the install step fails red until v0.1 ships. A red step is
+  visible, and the poster only runs after it, so nobody gets a green PR from an unrun review.
+- **Cost accepted: the CI contract is now agent-init's public API**, pinned per scaffold. A record
+  written by one version is read by the retro under another, which is what `schema_version` is for.
+- **`zod` was not taken as a runtime dependency.** It did two jobs: emitting the contract as JSON
+  Schema, and validating the model's output. The schema is now a frozen literal, generated once
+  with zod from the template's source, and a ~40-line walker validates against that same literal.
+  One source of truth, no npx cold-start cost, and the walker implements only the seven keywords
+  the schema uses.
+
+**A restore gap the layout creates, and closes.** claude-code-action restores the config it executes
+at startup (`CLAUDE.md`, `.claude/`, `.mcp.json`) from the base branch, so a PR cannot rewrite the
+reviewer that reviews it. In an agent-init repository `.claude/skills` and `.claude/agents` are
+symlinks into `.agents/`, and `.claude/settings.json` runs hook adapters from `.agents/hooks/`:
+none of that is covered by the action's list, so a PR could have supplied its own orchestrator,
+reviewer manifests or hook scripts to a job holding the review token. The emitted workflow extends
+the action's own treatment to `AGENTS.md` and `.agents/`, snapshotting the PR's copy under
+`.claude-pr/` for reviewers to read unexecuted. The list is the workflow's `RESTORE_PATHS`,
+because restoring a symlink does not restore what it points at: a repository whose
+`.agents/skills` links into another directory (this one links into `templates/`) must add that
+directory, or the PR's copy of a skill is still what runs. The test drives the workflow's own `run:` block, so
+the shell that ships is the shell asserted.
+
+**Reviewer model tiers are set at spawn time, not in frontmatter.** Decision 8 strips `model:` from
+shipped agents because the key is not portable. Left there, `correctness` and `security` would
+inherit the orchestrator's sonnet and the "never downgraded" promise would be quietly false, so
+`pr-ci-review` now sets each reviewer's and validator's model explicitly when it spawns them.
