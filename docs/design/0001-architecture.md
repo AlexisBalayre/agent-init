@@ -358,3 +358,26 @@ into context. The gap is recorded in the capability matrix rather than emulated.
 hooks. They would fit the three normalised events, but each is a new policy with its own blocking
 and false-positive trade-offs, not a refresh of one already shipped, so each is its own port. Its
 personal-integration skills stay out under decision 7.
+
+## 19. The rest of the template's portable skills
+
+Date: 2026-09-17
+
+Six more skills come across from the template: `grill-me`, `grill-with-docs`,
+`improve-codebase-architecture` and `caveman` into `thinking`, `find-dead-code` into `engineering`,
+and `pr-description` into `review`. The same substitutions as decision 18 apply: the project map
+instead of `.claude/project.env` and a fixed `docs/` tree, the host's tracker instead of one
+vendor's tools, and a fallback wherever a step assumes sub-agents.
+
+- **`improve-codebase-architecture` sits in `thinking`, not `engineering`** where the template files
+  it. It cannot run without `grilling`, `codebase-design` and `domain-modeling`, and placing it
+  beside them avoids making `engineering` depend on another pack for one skill.
+- **`pr-description` defers to the repository.** A PR template under `.github/` or a documented
+  title convention wins over the skill's own house style, and it adds an attribution footer only
+  when the project or host requires one. The template's rule forbidding attribution is a personal
+  preference, and a shipped skill must not override a host's attribution policy.
+
+**Still excluded, each under an existing decision:** `fix-sonar`, `fix-wiz` and `wiz` encode one
+security stack, and `obsidian-vault` and `daily-note` one person's notes (decision 7).
+`backfill-issues` is built on one tracker's model of cycles, estimates and labels, which a
+host-neutral rewrite would have to invent (decision 7).

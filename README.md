@@ -77,10 +77,10 @@ npx agent-init --packs thinking,engineering
 
 | Pack | Skills |
 | :-- | :-- |
-| `thinking` | `grilling`, `codebase-design`, `domain-modeling`, `prototype`, `handoff`, `zoom-out`, `writing-for-agents`, `research`, `wait-what`, `to-questionnaire` |
-| `engineering` | `tdd`, `diagnosing-bugs`, `resolving-merge-conflicts`, `wizard` |
+| `thinking` | `grilling`, `grill-me`, `grill-with-docs`, `codebase-design`, `domain-modeling`, `improve-codebase-architecture`, `prototype`, `handoff`, `zoom-out`, `writing-for-agents`, `research`, `wait-what`, `to-questionnaire`, `caveman` |
+| `engineering` | `tdd`, `diagnosing-bugs`, `resolving-merge-conflicts`, `wizard`, `find-dead-code` |
 | `planning` | `to-spec`, `to-tickets`, `wayfinder`, `implement`; installs `thinking` and `engineering` too, since it invokes their skills |
-| `review` | `review-changes` (six-area multi-agent review) + `address-review-comments`, and the seven reviewer subagents they dispatch |
+| `review` | `review-changes` (six-area multi-agent review), `address-review-comments`, `pr-description`, and the seven reviewer subagents they dispatch |
 
 They install once into `.agents/skills/`, where three of the five tools find them with no further
 wiring. Each is written against no particular stack: where a skill needs project conventions, a
@@ -88,7 +88,7 @@ command or a tracker, it reads the project map rather than assuming a layout. Th
 publish to whatever issue tracker the session can reach, or write local markdown under
 `docs/plans/` when there is none.
 
-Nine of these skills are meant to run only when you name them. Claude Code and Cursor honour that;
+Several of these skills are meant to run only when you name them. Claude Code and Cursor honour that;
 on Codex, opencode and Mistral Vibe the model can also fire them on its own. See
 [the matrix](docs/capability-matrix.md#skill-invocation-control).
 

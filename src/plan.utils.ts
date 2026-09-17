@@ -16,12 +16,13 @@ export const CORE_SKILLS = ["adapt-to-project"] as const;
 
 export const PACKS = {
   thinking: [
-    "grilling", "codebase-design", "domain-modeling", "handoff", "prototype", "zoom-out",
-    "writing-for-agents", "research", "wait-what", "to-questionnaire",
+    "grilling", "grill-me", "grill-with-docs", "codebase-design", "domain-modeling",
+    "improve-codebase-architecture", "handoff", "prototype", "zoom-out", "writing-for-agents",
+    "research", "wait-what", "to-questionnaire", "caveman",
   ],
-  engineering: ["tdd", "diagnosing-bugs", "resolving-merge-conflicts", "wizard"],
+  engineering: ["tdd", "diagnosing-bugs", "resolving-merge-conflicts", "wizard", "find-dead-code"],
   planning: ["to-spec", "to-tickets", "wayfinder", "implement"],
-  review: ["review-changes", "address-review-comments"],
+  review: ["review-changes", "address-review-comments", "pr-description"],
 } as const;
 
 /** Packs whose skills invoke another pack's skills by name, so installing one alone would dangle. */
