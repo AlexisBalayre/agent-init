@@ -14,10 +14,10 @@ disable-model-invocation: true
 ## 1. Inventory
 
 1. Confirm you are on a feature branch, not the trunk, with a clean tree: this change is reviewed like any other.
-2. Read `.agents/quality.toml` and `AGENTS.md`. Note which gate commands are still commented out and whether a `## Project map` section exists outside the `<!-- agent-init:start -->` / `<!-- agent-init:end -->` markers.
+2. Read `.agents/quality.toml`, `.agents/worktree.env` and `AGENTS.md`. Note which gate commands are still commented out and whether a `## Project map` section exists outside the `<!-- agent-init:start -->` / `<!-- agent-init:end -->` markers.
 3. Collect the instruction files the repository already had: `CLAUDE.md`, `.cursor/rules/`, `.github/copilot-instructions.md`, `CONTRIBUTING.md`, a style guide. Those are primary sources: their project knowledge belongs in `AGENTS.md`, never discarded.
 
-**Done when** you can list every open slot: each commented-out or missing gate command, each project map row with no value, each instruction file not yet reflected in `AGENTS.md`.
+**Done when** you can list every open slot: each commented-out or missing gate command, an empty `WORKTREE_INSTALL` in a project that installs dependencies, each project map row with no value, each instruction file not yet reflected in `AGENTS.md`.
 
 ## 2. Survey
 
@@ -45,6 +45,8 @@ Present in one message: the detected stacks with their paths, the proposed gate 
 For each gate, **run every command once before activating it**: `lint_fix` and `lint` against one real source file in that gate's paths, `typecheck` as-is. A command that fails on a clean trunk is not ready: leave it commented out and report the failure. A gate the user believes is running but is not is worse than one that is visibly unfinished.
 
 Activate a command by uncommenting it only after it passed and the user confirmed it.
+
+**Worktrees.** Set `WORKTREE_INSTALL` in `.agents/worktree.env` to the command that installs dependencies in a fresh checkout, and run it once in a scratch worktree (`.agents/scripts/worktree-create.sh adapt-check`, then remove it with `git worktree remove`) before writing it. Leave it empty when the project needs no install step.
 
 **Trunk.** The git-safety hook guards `GIT_TRUNK` from the project's `.env`, defaulting to `main`. When the trunk is anything else, add `GIT_TRUNK=<trunk>` to `.env`: without it the hook protects a branch the project does not use, and looks healthy while doing so.
 

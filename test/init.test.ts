@@ -215,6 +215,34 @@ describe("skill packs", () => {
   });
 });
 
+describe("ci-review pack", () => {
+  it("emits the review workflow pinned to this version, with the review pack it runs", () => {
+    const { stdout } = runCli(["--dir", repo, "--yes", "--packs", "ci-review", "--tools", "claude-code"]);
+    const workflow = readFileSync(path.join(repo, ".github/workflows/claude-code-review.yml"), "utf8");
+    const { version } = JSON.parse(readFileSync(path.resolve("package.json"), "utf8"));
+    expect(workflow).toContain(`AGENT_INIT_VERSION: "${version}"`);
+    expect(workflow).not.toContain("__AGENT_INIT_VERSION__");
+    expect(existsSync(path.join(repo, ".agents/skills/pr-ci-review/SKILL.md"))).toBe(true);
+    expect(existsSync(path.join(repo, ".agents/skills/review-changes/SKILL.md"))).toBe(true);
+    expect(existsSync(path.join(repo, ".agents/agents/review-security.md"))).toBe(true);
+    expect(stdout).toContain(".github/workflows/claude-code-review.yml");
+  });
+
+  it("emits no workflow, and says why, when Claude Code is not a target", () => {
+    const { stdout } = runCli(["--dir", repo, "--yes", "--packs", "ci-review", "--tools", "codex"]);
+    expect(existsSync(path.join(repo, ".github/workflows/claude-code-review.yml"))).toBe(false);
+    expect(stdout).toMatch(/skip\s+\.github\/workflows\/claude-code-review\.yml \(.*claude-code-action/);
+  });
+
+  it("never overwrites a workflow the project has edited", () => {
+    runCli(["--dir", repo, "--yes", "--packs", "ci-review", "--tools", "claude-code"]);
+    const target = path.join(repo, ".github/workflows/claude-code-review.yml");
+    writeFileSync(target, "edited\n");
+    runCli(["--dir", repo, "--yes", "--force", "--packs", "ci-review", "--tools", "claude-code"]);
+    expect(readFileSync(target, "utf8")).toBe("edited\n");
+  });
+});
+
 describe("review pack and the agents layer", () => {
   it("installs the reviewers and links them where the host supports named agents", () => {
     runCli(["--dir", repo, "--yes", "--packs", "review", "--tools", "claude-code,opencode,cursor"]);

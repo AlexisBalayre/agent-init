@@ -59,9 +59,9 @@ Neither holds for agents. See decision 8 in [`design/0001-architecture.md`](desi
 
 ## Skill invocation control
 
-Nine shipped skills are meant to run only when a human names them: the four `planning` skills,
-`handoff`, `zoom-out`, `wait-what`, `to-questionnaire`, `adapt-to-project`, and nothing else
-should fire them. They say so with Claude Code's `disable-model-invocation: true`. Verified
+Some shipped skills are meant to run only when a human names them: the four `planning` skills,
+`adapt-to-project`, `grill-me`, `find-dead-code` and others. They say so with Claude Code's
+`disable-model-invocation: true` in frontmatter, which is the authoritative list. Verified
 2026-09-17 (**D** documented, **S** read in source):
 
 | | Honours `disable-model-invocation` | Native equivalent | Name a skill explicitly |
