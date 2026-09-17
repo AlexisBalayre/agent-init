@@ -299,7 +299,12 @@ jobs:
           REVIEW_MERGE_BASE: ${{ needs.claude-review.outputs.merge_base }}
           GH_TOKEN: ${{ github.token }}
           REVIEW_POSTED_OUTPUT: ${{ github.workspace }}/posted.json
-        run: agent-init review post
+        # Handed over both ways: the file is what a findings record needs, and the inline copy
+        # keeps an older pinned agent-init working, which would otherwise read no output at all
+        # and report a finished review as "not reviewed".
+        run: |
+          REVIEW_STRUCTURED_OUTPUT="$(cat "$REVIEW_STRUCTURED_OUTPUT_FILE" 2>/dev/null || true)" \
+            agent-init review post
 
       - name: Emit review metrics
         if: always()
@@ -311,7 +316,9 @@ jobs:
           REVIEW_COMMIT_SHA: ${{ needs.claude-review.outputs.sha }}
           REVIEW_POSTED_INPUT: ${{ github.workspace }}/posted.json
           REVIEW_METRICS_OUTPUT: ${{ github.workspace }}/review-metrics.json
-        run: agent-init review metrics
+        run: |
+          REVIEW_STRUCTURED_OUTPUT="$(cat "$REVIEW_STRUCTURED_OUTPUT_FILE" 2>/dev/null || true)" \
+            agent-init review metrics
 
       - name: Upload review metrics
         if: always()
