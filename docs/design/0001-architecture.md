@@ -446,6 +446,21 @@ because restoring a symlink does not restore what it points at: a repository who
 directory, or the PR's copy of a skill is still what runs. The test drives the workflow's own `run:` block, so
 the shell that ships is the shell asserted.
 
+**The action gets the workflow token, not an app token.** `claude-code-action` exchanges its
+OAuth token for a GitHub App token, and that exchange 401s unless the workflow file on the PR is
+byte-identical to the copy on the default branch. Found by running it: the first live run was a PR
+that edited the workflow, and it failed there rather than in review. Passing `github_token` skips
+the exchange, and the review only ever reads through that token, since the poster is what writes.
+
+**The allowlist narrows the model; it does not sandbox it.** Its own first review pointed this out:
+`Bash(gh api repos/*)` matches on prefix, so a call appending `-X POST` is not excluded, and the
+token in that step can write to the PR. The entry cannot simply go: the orchestrator reads the PR's
+comment threads through it, and an unlisted verb halts the run at a permission prompt nobody can
+answer. What actually rules out a silently unreviewed PR is the poster, which runs on `always()`
+and reports a dead run. Making the claim true rather than nearly true means splitting the poster
+into its own job so the model's step holds no write-capable token: worth doing, not done here, and
+the workflow's comment now says what the list does and does not buy.
+
 **Reviewer model tiers are set at spawn time, not in frontmatter.** Decision 8 strips `model:` from
 shipped agents because the key is not portable. Left there, `correctness` and `security` would
 inherit the orchestrator's sonnet and the "never downgraded" promise would be quietly false, so
