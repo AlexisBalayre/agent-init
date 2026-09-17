@@ -202,10 +202,10 @@ describe("the workflow's config restore", () => {
     git(dir, "add", "-A");
     git(dir, "commit", "-qm", "pr");
 
-    const result = spawnSync("bash", ["-euo", "pipefail", "-c", workflowStep("Restore AGENTS.md and .agents/ from base")], {
+    const result = spawnSync("bash", ["-euo", "pipefail", "-c", workflowStep("Restore startup config from base")], {
       cwd: dir,
       encoding: "utf8",
-      env: { ...process.env, MERGE_BASE: base },
+      env: { ...process.env, MERGE_BASE: base, RESTORE_PATHS: "AGENTS.md .agents" },
     });
     expect(result.status).toBe(0);
     expect(readFileSync(path.join(dir, ".agents/skills/pr-ci-review/SKILL.md"), "utf8")).toBe("trusted\n");

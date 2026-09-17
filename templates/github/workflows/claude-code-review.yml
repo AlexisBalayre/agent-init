@@ -29,6 +29,11 @@ env:
   # The review tooling ships inside agent-init. Pinned, so the contract between this workflow,
   # the pr-ci-review skill and the poster moves only when you re-scaffold.
   AGENT_INIT_VERSION: "__AGENT_INIT_VERSION__"
+  # Config the model executes at startup, restored from the base branch below so a PR cannot
+  # rewrite the reviewer that reviews it. Add any path the shared tree resolves through: if
+  # `.agents/skills` is a symlink into another directory, that directory belongs here too,
+  # because restoring the link does not restore what it points at.
+  RESTORE_PATHS: "AGENTS.md .agents"
 
 jobs:
   claude-review:
@@ -141,20 +146,19 @@ jobs:
           schema=${schema//\'/\'\\\'\'}
           echo "schema=$schema" >> "$GITHUB_OUTPUT"
 
-      # Config the model executes at startup must come from the base branch, never the PR.
       # claude-code-action restores CLAUDE.md, .claude/ and .mcp.json itself, but not AGENTS.md
       # (which CLAUDE.md imports) and not .agents/, where agent-init keeps what .claude/ only
       # links to: the skills and reviewer agents this review runs, and the hook adapters
       # .claude/settings.json executes. Left alone, a PR could rewrite its own reviewer. Apply
-      # the action's treatment: snapshot the head's copy for reviewers under .claude-pr/, then
-      # take the merge base's.
-      - name: Restore AGENTS.md and .agents/ from base
+      # the action's treatment to every RESTORE_PATHS entry: snapshot the head's copy for
+      # reviewers under .claude-pr/, then take the merge base's.
+      - name: Restore startup config from base
         if: steps.pr-head.outputs.skip != 'true' && steps.preflight.outputs.skip != 'true'
         env:
           MERGE_BASE: ${{ steps.preflight.outputs.merge_base }}
         run: |
           mkdir -p .claude-pr
-          for path in AGENTS.md .agents; do
+          for path in ${RESTORE_PATHS}; do
             if [ -e "$path" ]; then cp -R "$path" ".claude-pr/$path"; fi
             # Removed first: checking out the base's copy alone would keep files the PR added.
             rm -rf "$path"
