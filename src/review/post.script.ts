@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { commentableLines, resolveAnchor, trueLine } from "./diff-anchor.utils.js";
 import { bodyLines } from "./review-body.utils.js";
+import { structuredOutput } from "./structured-output.utils.js";
 import { type Finding, parseReviewSummary, type ReviewSummary } from "./review-summary.schemas.js";
 
 /**
@@ -170,7 +171,7 @@ export function main(): void {
   // its output is not a verdict to post.
   const stepOutcome = env.REVIEW_STEP_OUTCOME ?? "";
   const summary =
-    stepOutcome === "" || stepOutcome === "success" ? parseSummary(env.REVIEW_STRUCTURED_OUTPUT ?? "") : null;
+    stepOutcome === "" || stepOutcome === "success" ? parseSummary(structuredOutput(env)) : null;
   const { anchored, unanchored } = summary
     ? prepare(summary, env.REVIEW_MERGE_BASE ?? "")
     : { anchored: [], unanchored: [] };
