@@ -16,8 +16,8 @@ the area reviewers do, each in its own context window.
 - **A pull request** (`pr [<number>]`): check it out, assert the tree is at the PR head and clean,
   and read the PR body for the author's stated intent and declared scope.
 
-Run whatever lint/typecheck/test command the project defines — `.agents/quality.toml` names them,
-if it is configured — scoped to what changed. **If it fails, stop**: report the failures. A review
+Run whatever lint/typecheck/test command the project defines — the project map in `AGENTS.md`
+names them, and `.agents/quality.toml` holds the lint and typecheck gate — scoped to what changed. **If it fails, stop**: report the failures. A review
 layered on a broken tree wastes both your effort and the author's.
 
 ## 2. Steer, yourself
