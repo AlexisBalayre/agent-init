@@ -348,8 +348,10 @@ can reach, take identifiers from the map or ask once, and fall back to local mar
 `docs/plans/`. Upstream keeps that directory out of git with a pre-commit hook agent-init does not
 emit, so the skills ask whether to commit or ignore it rather than claiming a guard that is absent.
 
-**Cost accepted: user-only skills are not user-only everywhere.** Nine skills are meant to fire only
-when a human names them, marked with `disable-model-invocation: true`. Verified 2026-09-17, only
+**Cost accepted: user-only skills are not user-only everywhere.** Nine skills at this point are
+meant to fire only when a human names them, marked with `disable-model-invocation: true` (fifteen
+once decision 19 landed the rest of the template's skills; the frontmatter is the authoritative
+list). Verified 2026-09-17, only
 Claude Code and Cursor honour it. Codex and opencode each have a different native switch, unbuilt;
 Mistral Vibe has none. On those three the skills are model-invocable and their descriptions load
 into context. The gap is recorded in the capability matrix rather than emulated.
@@ -490,6 +492,7 @@ anyone. A documented gap beats an undocumented guarantee whose failure is silent
 
 **Mistral Vibe: no route.** Its only related key, `user-invocable: false`, is the opposite switch.
 
-- **Cost accepted:** fifteen near-identical two-line files, one per user-invoked skill, because
-  Codex reads the policy per skill directory. A generator-side loop would hide them from the
+- **Cost accepted:** fifteen near-identical files, one per user-invoked skill, each a two-line
+  payload under the four comment lines that explain why it exists, because Codex reads the policy
+  per skill directory. A generator-side loop would hide them from the
   `--check` gate that keeps the committed tree honest.
