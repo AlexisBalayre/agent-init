@@ -1,6 +1,8 @@
-# This repository's own copy of what the ci-review pack emits
-# (templates/github/workflows/claude-code-review.yml), with the two changes dogfooding requires.
-# Keep it in step with the template when that file changes.
+# This repository's copy of what the ci-review pack emits
+# (templates/github/workflows/claude-code-review.yml), rendered by scripts/render-review-workflow.mjs.
+# Edit the template or that script, never this file: a test asserts the two stay in step.
+#
+# The differences dogfooding requires:
 #
 #   1. The tooling is built from the BASE branch instead of installed from npm. agent-init is not
 #      published yet, and here the review tooling is the very code under review: building the PR's
@@ -9,9 +11,8 @@
 #   2. Only the repository owner can trigger a run: their own pull requests, or their
 #      `@claude review` comment on anyone's. A run carries the review token, and the model reads
 #      whatever the diff says.
-#
-# RESTORE_PATHS carries templates/ as well, because .agents/ here is a symlink into it: restoring
-# the link alone would still run the PR's copy of the skills and reviewer manifests.
+#   3. RESTORE_PATHS carries templates/ as well, because .agents/ here is a symlink into it:
+#      restoring the link alone would still run the PR's copy of the skills and reviewer manifests.
 #
 # Setup (once):
 #   1. Add the `CLAUDE_CODE_OAUTH_TOKEN` secret: `claude setup-token`, then
@@ -43,9 +44,9 @@ env:
 
 jobs:
   claude-review:
-    # Owner-only: a fork PR would otherwise queue a run that reads its diff with the review
-    # token in the environment. `github.repository_owner` is the account, so this needs no list
-    # to maintain.
+    # Owner-only, and off until CLAUDE_REVIEW_ENABLED is set: a fork PR would otherwise queue a
+    # run that reads its diff with the review token in the environment.
+    # `github.repository_owner` is the account, so this needs no list to maintain.
     if: |
       vars.CLAUDE_REVIEW_ENABLED == 'true' && (
       (github.event_name == 'pull_request' && github.event.pull_request.draft == false &&
