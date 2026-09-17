@@ -34,3 +34,17 @@ constraint, a gotcha. Never narrate what the code does.
 ## Git workflow
 
 Never commit to `main`. Branch per change, PRs only.
+
+<!-- agent-init:start -->
+## Agent setup
+
+Shared instructions for every coding agent in this repository. Tool-specific layers point here
+rather than repeating it.
+
+- Conventions, skills and hooks live in `.agents/`.
+- The quality gate reads `.agents/quality.toml`.
+- Hook policies are shared shell scripts; each tool has a thin adapter in
+  `.agents/hooks/adapters/`. The contract is `.agents/hooks/CONTRACT.md`.
+
+Managed by agent-init. Edit outside the markers, or edit `.agents/` directly.
+<!-- agent-init:end -->

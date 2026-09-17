@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, renameSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -217,5 +217,37 @@ describe("review pack and the agents layer", () => {
   it("does not install the agents layer for packs that do not need it", () => {
     runCli(["--dir", repo, "--yes", "--packs", "thinking"]);
     expect(existsSync(path.join(repo, ".agents/agents"))).toBe(false);
+  });
+});
+
+describe("--check", () => {
+  it("reports drift and writes nothing when the tree was never scaffolded", () => {
+    const { status, stdout } = runCli(["--dir", repo, "--check"]);
+    expect(status).toBe(1);
+    expect(stdout).toContain("drift");
+    expect(existsSync(path.join(repo, ".agents"))).toBe(false);
+  });
+
+  it("passes once the tree matches what init emits", () => {
+    runCli(["--dir", repo, "--yes", "--packs", "engineering"]);
+    const { status, stdout } = runCli(["--dir", repo, "--check", "--packs", "engineering"]);
+    expect(status).toBe(0);
+    expect(stdout).toContain("matches what init would emit");
+  });
+
+  // Content, not inodes: a project that symlinks the shared tree to one source is not drifted.
+  it("accepts a shared tree that is symlinked rather than copied", () => {
+    runCli(["--dir", repo, "--yes", "--packs", "engineering"]);
+    const skills = path.join(repo, ".agents/skills");
+    const stash = path.join(repo, "shared-skills");
+    renameSync(skills, stash);
+    symlinkSync("../shared-skills", skills);
+    expect(runCli(["--dir", repo, "--check", "--packs", "engineering"]).status).toBe(0);
+  });
+
+  it("runs on a dirty tree, since it writes nothing", () => {
+    runCli(["--dir", repo, "--yes", "--packs", "engineering"]);
+    writeFileSync(path.join(repo, "dirty.txt"), "x");
+    expect(runCli(["--dir", repo, "--check", "--packs", "engineering"]).status).toBe(0);
   });
 });
