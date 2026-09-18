@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -224,6 +224,11 @@ const PROBES: Partial<Record<Tool, Probe>> = {
   },
 };
 
+/** Where each tool looks for skills, when that is not the shared tree itself. */
+const SKILL_PATHS: Partial<Record<Tool, string>> = {
+  "claude-code": ".claude/skills",
+};
+
 const WIRING: Record<Tool, { file: string; needle: string }> = {
   "claude-code": { file: ".claude/settings.json", needle: ".agents/hooks/adapters" },
   opencode: { file: ".opencode/plugins/agent-init.js", needle: "" },
@@ -252,6 +257,21 @@ function doctor(options: Options): number {
     const file = path.join(root, wiring.file);
     const wired = existsSync(file) && (wiring.needle === "" || readFileSync(file, "utf8").includes(wiring.needle));
     checks.push({ name: `${tool} wiring`, ok: wired, detail: wired ? `wired in ${wiring.file}` : `not wired in ${wiring.file}` });
+
+    // A symlink that materialised as a text file, or a copy that never arrived, leaves a path
+    // that leads nowhere: the tool then loads no skills at all and says nothing about it.
+    const skills = SKILL_PATHS[tool];
+    if (skills) {
+      const dir = path.join(root, skills);
+      const reachable = existsSync(dir) && readdirSync(dir).length > 0;
+      checks.push({
+        name: `${tool} skills`,
+        ok: reachable,
+        detail: reachable
+          ? `${readdirSync(dir).length} entr(ies) under ${skills}`
+          : `${skills} resolves to nothing — the tool will load no skills`,
+      });
+    }
 
     const probe = PROBES[tool];
     if (!probe) {

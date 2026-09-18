@@ -119,8 +119,12 @@ describe("init", () => {
     expect(cursor.version).toBe(1);
     expect(cursor.hooks.beforeShellExecution).toHaveLength(1);
 
-    expect(lstatSync(path.join(repo, ".cursor/skills")).isSymbolicLink()).toBe(true);
+    // Cursor documents `.agents/skills/` as a project-level path (matrix, read 2026-09-18), so
+    // nothing is emitted for it, the same as Codex, opencode and Vibe.
+    expect(existsSync(path.join(repo, ".cursor/skills"))).toBe(false);
     expect(existsSync(path.join(repo, ".codex/skills"))).toBe(false);
+    // Claude Code is the one host that still needs the link.
+    expect(lstatSync(path.join(repo, ".claude/skills")).isSymbolicLink()).toBe(true);
   });
 
   // TOML is spliced as text precisely so a user's comments and ordering survive.
