@@ -1,6 +1,6 @@
 # agent-init
 
-> **Status: all five tools wired.** Not yet published to npm — run it from a clone for now. The architecture is recorded in
+> **Status: v0.1.0, all five tools wired.** The architecture is recorded in
 > [`docs/design/0001-architecture.md`](docs/design/0001-architecture.md).
 
 One command to give a repository a shared agent setup that **Claude Code, Codex, opencode, Mistral
@@ -115,8 +115,7 @@ because green silence reads exactly like a clean review.
 
 The workflow's deterministic steps are `agent-init review preflight|schema|post|metrics`, installed
 from npm at the version that scaffolded the file, so the repository gets a workflow and no
-toolchain of its own. **It is inert until agent-init is published to npm** (this is v0.0.0), and
-the install step fails red until then.
+toolchain of its own. Re-scaffold to move that pin.
 
 Two setup steps, both in the comment at the top of the emitted workflow: add the
 `CLAUDE_CODE_OAUTH_TOKEN` secret, and create the `ci/review-metrics` orphan branch that stores each
