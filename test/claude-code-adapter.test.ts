@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -54,5 +54,52 @@ describe("adapter safety", () => {
   it("never blocks because of its own misconfiguration", () => {
     const { status } = runAdapter("pre-tool-bash.force-push.json", "no-such-policy");
     expect(status).toBe(0);
+  });
+});
+
+/**
+ * A worktree is a second checkout of the same repository on its own branch. The hook is handed the
+ * repository root as the project dir and the worktree as the session's cwd, so reading the root's
+ * branch blocks every commit made from a worktree whenever the root happens to sit on trunk. That
+ * is not hypothetical: it blocked the commit that introduced this test.
+ */
+describe("git-safety across worktrees", () => {
+  function repoWithWorktree() {
+    const root = mkdtempSync(path.join(tmpdir(), "agent-init-wt-safety-"));
+    const git = (cwd: string, ...args: string[]) =>
+      spawnSync("git", ["-c", "user.email=t@t", "-c", "user.name=t", ...args], { cwd, encoding: "utf8" });
+    git(root, "init", "-q", "-b", "main");
+    writeFileSync(path.join(root, "a.txt"), "x\n");
+    git(root, "add", "-A");
+    git(root, "commit", "-qm", "init");
+    const tree = path.join(root, ".worktrees", "feature");
+    git(root, "worktree", "add", "-q", tree, "-b", "feat/thing");
+    return { root, tree };
+  }
+
+  function runFromCwd(projectDir: string, cwd: string) {
+    const payload = JSON.stringify({
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      cwd,
+      tool_input: { command: ["git", "commit", "-m", "work"].join(" ") },
+    });
+    return spawnSync("bash", [ADAPTER, "git-safety"], {
+      input: payload,
+      encoding: "utf8",
+      env: { ...process.env, CLAUDE_PROJECT_DIR: projectDir },
+    });
+  }
+
+  it("allows a commit from a worktree while the root sits on trunk", () => {
+    const { root, tree } = repoWithWorktree();
+    expect(runFromCwd(root, tree).status).toBe(0);
+  });
+
+  it("still blocks a commit made in the root while it is on trunk", () => {
+    const { root } = repoWithWorktree();
+    const result = runFromCwd(root, root);
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain("Branch first");
   });
 });
