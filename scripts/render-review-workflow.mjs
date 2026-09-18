@@ -21,7 +21,7 @@ const HEADER = `# This repository's copy of what the ci-review pack emits
 #
 # The differences dogfooding requires:
 #
-#   1. The tooling is built from the BASE branch instead of installed from npm. agent-init is not
+#   1. The tooling is built from the BASE branch instead of installed from npm. agentspine is not
 #      published yet, and here the review tooling is the very code under review: building the PR's
 #      own src/ would hand untrusted code a job holding the review token. The base branch's copy
 #      has already been reviewed, which is the same argument as the config restore below.
@@ -73,7 +73,7 @@ const OWNER_GATE = `    # Owner-only, and off until CLAUDE_REVIEW_ENABLED is set
  * with nothing to notice it. Pinned by hash: when the template header changes, rendering fails
  * and whoever changed it decides what HEADER below should say, then records the new hash.
  */
-const TEMPLATE_HEADER_SHA = "e0c634552d14bf155548d4de3ab683a8b796b0f06c30a89dfc1a439744814d60";
+const TEMPLATE_HEADER_SHA = "2587a211aede3cd53c4fe4cc58ac05c9f4b86ec27b1f59acc509859d346799be";
 
 const HEADER_PATTERN = /^#[\s\S]*?(?=^name: Claude Code Review$)/m;
 
@@ -82,7 +82,7 @@ const TRANSFORMS = [
   [HEADER_PATTERN, `${HEADER}\n`],
   // Nothing to pin: the tooling is built here, not installed from npm.
   [
-    /  # The review tooling ships inside agent-init[\s\S]*?  AGENT_INIT_VERSION: "__AGENT_INIT_VERSION__"\n/,
+    /  # The review tooling ships inside agentspine[\s\S]*?  AGENTSPINE_VERSION: "__AGENTSPINE_VERSION__"\n/,
     "",
   ],
   // `.agents/` here is a symlink into templates/, so the link's target is startup config too.
@@ -91,12 +91,12 @@ const TRANSFORMS = [
     /    if: \|\n      \(github\.event_name == 'pull_request' && github\.event\.pull_request\.draft == false\) \|\|\n      \(github\.event_name == 'issue_comment'[^\n]*\n/,
     `${OWNER_GATE}\n`,
   ],
-  // agent-init is unpublished, and here the tooling is the code under review.
+  // agentspine is unpublished, and here the tooling is the code under review.
   [
-    /      # --ignore-scripts: the install runs with this job's token in the environment\.\n      - name: Install review tooling\n        run: npm install --global --ignore-scripts "agent-init@\$\{AGENT_INIT_VERSION\}"\n/g,
+    /      # --ignore-scripts: the install runs with this job's token in the environment\.\n      - name: Install review tooling\n        run: npm install --global --ignore-scripts "agentspine@\$\{AGENTSPINE_VERSION\}"\n/g,
     TOOLING_STEP,
   ],
-  [/agent-init review (preflight|schema|post|metrics)/g, 'node "${{ steps.tooling.outputs.cli }}" review $1'],
+  [/agentspine review (preflight|schema|post|metrics)/g, 'node "${{ steps.tooling.outputs.cli }}" review $1'],
 ];
 
 export function render(template) {
@@ -112,7 +112,7 @@ export function render(template) {
     if (!pattern.test(out)) throw new Error(`review-workflow transform no longer matches: ${pattern}`);
     out = out.replace(pattern, replacement);
   }
-  if (out.includes("__AGENT_INIT_VERSION__")) throw new Error("version placeholder survived rendering");
+  if (out.includes("__AGENTSPINE_VERSION__")) throw new Error("version placeholder survived rendering");
   return out;
 }
 

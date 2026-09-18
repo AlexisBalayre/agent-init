@@ -4,6 +4,6 @@ dist/
 .DS_Store
 .env
 
-# <!-- agent-init:start -->
+# <!-- agentspine:start -->
 .worktrees/
-# <!-- agent-init:end -->
+# <!-- agentspine:end -->

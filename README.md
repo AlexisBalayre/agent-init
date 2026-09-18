@@ -1,16 +1,16 @@
-# agent-init
+# agentspine
 
-[![npm](https://img.shields.io/npm/v/agent-init?color=cb3837&logo=npm)](https://www.npmjs.com/package/agent-init)
-[![ci](https://github.com/AlexisBalayre/agent-init/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexisBalayre/agent-init/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/agentspine?color=cb3837&logo=npm)](https://www.npmjs.com/package/agentspine)
+[![ci](https://github.com/AlexisBalayre/agentspine/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexisBalayre/agentspine/actions/workflows/ci.yml)
 [![node](https://img.shields.io/badge/node-%3E%3D20-5fa04e?logo=node.js&logoColor=white)](package.json)
 [![licence](https://img.shields.io/badge/licence-MIT-blue)](LICENSE)
 
-**Five coding agents, five config directories, one setup.** `agent-init` writes your conventions,
+**Five coding agents, five config directories, one setup.** `agentspine` writes your conventions,
 skills and blocking hooks **once** into `.agents/`, then wires **Claude Code, Codex, opencode,
 Mistral Vibe and Cursor** to read them.
 
 ```bash
-npx agent-init
+npx agentspine
 ```
 
 - **One copy of everything.** Edit a skill once, every tool sees it.
@@ -27,7 +27,7 @@ What each tool actually supports, with sources and dates: [`docs/capability-matr
 Every one of these tools wants its own directory. Maintain five and they drift: a skill written
 three times, a hook wired four ways, a convention updated in one file and stale in the rest.
 
-`agent-init` writes **one** real copy of the content under `.agents/` and points each tool at it.
+`agentspine` writes **one** real copy of the content under `.agents/` and points each tool at it.
 
 ```
 .agents/
@@ -86,7 +86,7 @@ tracker, and where the glossary, ADRs and conventions live.
 Everything else is opt-in and off by default:
 
 ```bash
-npx agent-init --packs thinking,engineering
+npx agentspine --packs thinking,engineering
 ```
 
 | Pack | Skills |
@@ -125,7 +125,7 @@ structured record; the poster renders it, anchors each important finding to a li
 pins a `claude-review` commit status. A run that dies still posts "this PR has not been reviewed",
 because green silence reads exactly like a clean review.
 
-The workflow's deterministic steps are `agent-init review preflight|schema|post|metrics`, installed
+The workflow's deterministic steps are `agentspine review preflight|schema|post|metrics`, installed
 from npm at the version that scaffolded the file, so the repository gets a workflow and no
 toolchain of its own. Re-scaffold to move that pin.
 
@@ -139,15 +139,15 @@ host, `review-changes` reviews the same six areas locally.
 ## Install safety
 
 Refuses a dirty git tree without `--force` — git is the backup. Existing markdown is edited only
-between `<!-- agent-init:start -->` markers. JSON config is deep-merged, never clobbered. TOML gets
+between `<!-- agentspine:start -->` markers. JSON config is deep-merged, never clobbered. TOML gets
 a text-spliced managed block so comments survive. Re-runs are idempotent.
 
 ## Usage
 
 ```
-agent-init [init]      Scaffold .agents/ and wire each detected tool
-agent-init doctor      Probe the wiring and verify hooks actually block
-agent-init review <step>   CI review tooling, run by the emitted workflow
+agentspine [init]      Scaffold .agents/ and wire each detected tool
+agentspine doctor      Probe the wiring and verify hooks actually block
+agentspine review <step>   CI review tooling, run by the emitted workflow
 
 --tools <list>     claude-code, opencode, codex, mistral-vibe, cursor (default: detected)
 --packs <list>     thinking, engineering, planning, review, ci-review (default: none)
@@ -168,7 +168,7 @@ prints its plan and exits non-zero rather than guessing.
 ## Verify it actually works
 
 ```bash
-npx agent-init doctor
+npx agentspine doctor
 ```
 
 Fires a probe hook against each locally installed tool and checks the block landed. Hooks that

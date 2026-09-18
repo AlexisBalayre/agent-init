@@ -7,14 +7,14 @@ disable-model-invocation: true
 
 # Adapt to project
 
-`agent-init` scaffolds a setup that knows nothing about the repository: the quality gate's commands were inferred from lockfiles and, unless a human confirmed them, are written commented out; and the shipped skills look for the project's commands and docs in a **project map** that does not exist yet. This skill turns that skeleton into this project's config. It is re-runnable: fill only what is missing or what the focus argument names, and never overwrite filled content without asking.
+`agentspine` scaffolds a setup that knows nothing about the repository: the quality gate's commands were inferred from lockfiles and, unless a human confirmed them, are written commented out; and the shipped skills look for the project's commands and docs in a **project map** that does not exist yet. This skill turns that skeleton into this project's config. It is re-runnable: fill only what is missing or what the focus argument names, and never overwrite filled content without asking.
 
 **Facts come from the code; decisions come from the user.** Never invent a command, a convention, or a doc location. What the code cannot tell you becomes a question, or stays open and is listed as deferred in the report.
 
 ## 1. Inventory
 
 1. Confirm you are on a feature branch, not the trunk, with a clean tree: this change is reviewed like any other.
-2. Read `.agents/quality.toml`, `.agents/worktree.env` and `AGENTS.md`. Note which gate commands are still commented out and whether a `## Project map` section exists outside the `<!-- agent-init:start -->` / `<!-- agent-init:end -->` markers.
+2. Read `.agents/quality.toml`, `.agents/worktree.env` and `AGENTS.md`. Note which gate commands are still commented out and whether a `## Project map` section exists outside the `<!-- agentspine:start -->` / `<!-- agentspine:end -->` markers.
 3. Collect the instruction files the repository already had: `CLAUDE.md`, `.cursor/rules/`, `.github/copilot-instructions.md`, `CONTRIBUTING.md`, a style guide. Those are primary sources: their project knowledge belongs in `AGENTS.md`, never discarded.
 
 **Done when** you can list every open slot: each commented-out or missing gate command, an empty `WORKTREE_INSTALL` in a project that installs dependencies, each project map row with no value, each instruction file not yet reflected in `AGENTS.md`.
@@ -52,7 +52,7 @@ Activate a command by uncommenting it only after it passed and the user confirme
 
 ## 5. Project map
 
-Write a `## Project map` section into `AGENTS.md`, **outside** the agent-init markers (the scaffolder owns only what is between them). The shipped skills read this table instead of assuming a layout, so every row matters:
+Write a `## Project map` section into `AGENTS.md`, **outside** the agentspine markers (the scaffolder owns only what is between them). The shipped skills read this table instead of assuming a layout, so every row matters:
 
 ```markdown
 ## Project map
@@ -81,7 +81,7 @@ Write a `## Project map` section into `AGENTS.md`, **outside** the agent-init ma
 1. The step 1 inventory now has only the slots the user chose to defer.
 2. Run the gate for real: make a trivial edit to one source file that an active gate matches, run `AGENT_EVENT=turn-end AGENT_PROJECT_DIR="$PWD" .agents/hooks/policies/quality-gate.sh`, confirm it exits 0, then revert the edit.
 3. Every path in the project map exists, and every command in it runs.
-4. `npx agent-init doctor` passes, so the hooks that enforce the gate actually block. When the trunk is not `main`, also run `AGENT_EVENT=pre-tool:bash AGENT_COMMAND="git push origin <trunk>" AGENT_PROJECT_DIR="$PWD" .agents/hooks/policies/git-safety.sh` and confirm it exits 2: doctor probes `main` only.
+4. `npx agentspine doctor` passes, so the hooks that enforce the gate actually block. When the trunk is not `main`, also run `AGENT_EVENT=pre-tool:bash AGENT_COMMAND="git push origin <trunk>" AGENT_PROJECT_DIR="$PWD" .agents/hooks/policies/git-safety.sh` and confirm it exits 2: doctor probes `main` only.
 
 ## 7. Report
 

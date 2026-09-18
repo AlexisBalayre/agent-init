@@ -20,7 +20,7 @@ function runPolicy(policyName, env, projectDir) {
   // Only exit 2 blocks. A policy that crashed must not take the session down with it.
   if (result.status === 2) return { blocked: true, reason: (result.stderr || "").trim() };
   if (result.status !== 0) {
-    console.error(`agent-init: policy ${policyName} exited ${result.status}; allowing.`);
+    console.error(`agentspine: policy ${policyName} exited ${result.status}; allowing.`);
   }
   return { blocked: false };
 }
@@ -40,7 +40,7 @@ export const AgentInit = async ({ directory, worktree }) => {
         projectDir,
       );
 
-      if (blocked) throw new Error(reason || "Blocked by agent-init git-safety.");
+      if (blocked) throw new Error(reason || "Blocked by agentspine git-safety.");
     },
 
     "tool.execute.after": async (input, output) => {
@@ -58,7 +58,7 @@ export const AgentInit = async ({ directory, worktree }) => {
       if (event?.type !== "session.idle") return;
 
       const { blocked, reason } = runPolicy("quality-gate", { AGENT_EVENT: "turn-end" }, projectDir);
-      if (blocked && reason) console.error(`agent-init quality gate:\n${reason}`);
+      if (blocked && reason) console.error(`agentspine quality gate:\n${reason}`);
     },
   };
 };

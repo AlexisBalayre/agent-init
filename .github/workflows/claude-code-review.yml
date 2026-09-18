@@ -4,7 +4,7 @@
 #
 # The differences dogfooding requires:
 #
-#   1. The tooling is built from the BASE branch instead of installed from npm. agent-init is not
+#   1. The tooling is built from the BASE branch instead of installed from npm. agentspine is not
 #      published yet, and here the review tooling is the very code under review: building the PR's
 #      own src/ would hand untrusted code a job holding the review token. The base branch's copy
 #      has already been reviewed, which is the same argument as the config restore below.
@@ -176,7 +176,7 @@ jobs:
           echo "schema=$schema" >> "$GITHUB_OUTPUT"
 
       # claude-code-action restores CLAUDE.md, .claude/ and .mcp.json itself, but not AGENTS.md
-      # (which CLAUDE.md imports) and not .agents/, where agent-init keeps what .claude/ only
+      # (which CLAUDE.md imports) and not .agents/, where agentspine keeps what .claude/ only
       # links to: the skills and reviewer agents this review runs, and the hook adapters
       # .claude/settings.json executes. Left alone, a PR could rewrite its own reviewer. Apply
       # the action's treatment to every RESTORE_PATHS entry: snapshot the head's copy for
@@ -338,7 +338,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REVIEW_POSTED_OUTPUT: ${{ github.workspace }}/posted.json
         # Handed over both ways: the file is what a findings record needs, and the inline copy
-        # keeps an older pinned agent-init working, which would otherwise read no output at all
+        # keeps an older pinned agentspine working, which would otherwise read no output at all
         # and report a finished review as "not reviewed".
         run: |
           REVIEW_STRUCTURED_OUTPUT="$(cat "$REVIEW_STRUCTURED_OUTPUT_FILE" 2>/dev/null || true)" \

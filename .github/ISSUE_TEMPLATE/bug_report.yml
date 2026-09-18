@@ -1,17 +1,17 @@
 name: Bug report
-description: Something agent-init emitted, wired or blocked is wrong
+description: Something agentspine emitted, wired or blocked is wrong
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        If the repository is already scaffolded, `agent-init doctor --json` is the fastest way to show
+        If the repository is already scaffolded, `agentspine doctor --json` is the fastest way to show
         the wiring and whether a probe hook blocked. The other fields still need you.
   - type: textarea
     id: doctor
     attributes:
       label: doctor output
-      description: Output of `npx agent-init doctor --json`, if the repository is already scaffolded.
+      description: Output of `npx agentspine doctor --json`, if the repository is already scaffolded.
       render: json
   - type: textarea
     id: what-happened
@@ -19,7 +19,7 @@ body:
       label: What happened
       description: What you ran, what you expected, and what you got instead.
       placeholder: |
-        Ran: npx agent-init --packs thinking --tools codex
+        Ran: npx agentspine --packs thinking --tools codex
         Expected: ...
         Got: ...
     validations:

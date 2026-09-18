@@ -15,7 +15,7 @@ function git(cwd: string, ...args: string[]) {
 
 /** A committed repository with a bare origin, so branches can be published and deleted. */
 function repoWithOrigin(worktreeEnv?: string) {
-  const base = mkdtempSync(path.join(tmpdir(), "agent-init-wt-"));
+  const base = mkdtempSync(path.join(tmpdir(), "agentspine-wt-"));
   const origin = path.join(base, "origin.git");
   const repo = path.join(base, "repo");
   spawnSync("git", ["init", "-q", "--bare", origin]);
