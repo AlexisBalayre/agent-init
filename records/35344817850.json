@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-09-18T12:40:52.105Z",
+  "repository": "AlexisBalayre/agentspine",
+  "run_id": "35344817850",
+  "run_url": "https://github.com/AlexisBalayre/agentspine/actions/runs/35344817850",
+  "actor": "AlexisBalayre",
+  "commit_sha": "3a6d16db24868d767ab4ae0941a2062ddca296c0",
+  "source": "pr",
+  "pr_number": 23,
+  "action": "review",
+  "reviewers_spawned": [
+    "correctness",
+    "security",
+    "context",
+    "conventions",
+    "maintainability",
+    "docs"
+  ],
+  "reviewers_skipped": [],
+  "review_mode": "full",
+  "incremental_from_sha": null,
+  "prior_importants": [],
+  "findings": [
+    {
+      "file": "scripts/audit-templates.sh",
+      "line": "20-31",
+      "area": "correctness",
+      "confidence": "high",
+      "tag": "important",
+      "description": "FINGERPRINTS is now partly composed from an untracked file or a CI secret; scan()'s `grep -rniE ... 2>/dev/null` (line 42) swallows a regex compile error and never checks the exit code, so a malformed private term silently disables the entire fingerprint scan (including the original hardcoded terms) instead of failing loudly.",
+      "body": "Before this PR, `FINGERPRINTS` was a fixed, always-valid literal. This PR appends externally-supplied content to it:\n\n```sh\nif [ -f \"$PRIVATE_FILE\" ]; then\n  PRIVATE=$(grep -vE '^[[:space:]]*(#|$)' \"$PRIVATE_FILE\" | paste -sd '|' -)\nelif [ -n \"${AUDIT_EXTRA_FINGERPRINTS:-}\" ]; then\n  PRIVATE=\"$AUDIT_EXTRA_FINGERPRINTS\"\nfi\nif [ -n \"$PRIVATE\" ]; then\n  FINGERPRINTS=\"$FINGERPRINTS|$PRIVATE\"\n```\n\nThat composed pattern reaches the pre-existing `scan()` helper unchanged:\n\n```sh\nhits=$(grep -rniE \"$pattern\" templates/ 2>/dev/null | grep -v \"^$EXCLUDE:\")\nif [ -n \"$hits\" ]; then\n  ...\n  status=1\nfi\n```\n\n<https://github.com/AlexisBalayre/agentspine/blob/3a6d16db24868d767ab4ae0941a2062ddca296c0/scripts/audit-templates.sh#L20-L47>\n\nIf `.audit-fingerprints` or `AUDIT_EXTRA_FINGERPRINTS` contains a term with an unmatched `(`, `[`, or an invalid `{n,m}`, `grep -rniE` fails to compile the pattern, prints its parse error to the now-discarded stderr, and produces empty stdout. `hits` becomes empty, `status` stays `0`, and the script prints \"templates/ clean\" and exits 0 — even though the scan never ran. `set -e` is not on and the pipeline's exit status is never inspected, so nothing surfaces the failure. This is exactly the failure mode the surrounding comment (and AGENTS.md's \"Silent degradation is the failure mode this project exists to avoid\") warns against: a single malformed entry in the private list — set by a human, not validated anywhere in this script — turns off the employer/vendor leak check with no error anywhere in the CI log.\n\nConsider validating the composed pattern before use (e.g. `grep -E \"$FINGERPRINTS\" </dev/null; [ $? -le 1 ] || { echo 'invalid FINGERPRINTS pattern' >&2; exit 1; }`) and dropping the `2>/dev/null` in `scan()` so a real grep error is at least visible in the CI log.",
+      "suggestion": null
+    },
+    {
+      "file": "scripts/audit-templates.sh",
+      "line": "22",
+      "area": "correctness",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "`paste -sd '|' -` doesn't trim whitespace, so a `.audit-fingerprints` line like `  acme  ` becomes a literal, space-padded alternative that won't match `acme` in templates — a term with accidental leading/trailing whitespace is silently dropped from the scan.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "scripts/audit-authors.sh",
+      "line": "30, 37",
+      "area": "correctness",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The `git log --format='%h|author|%an|%ae%n%h|committer|%cn|%ce'` output is split with `IFS='|' read -r sha kind name email`, but git only forbids `<`, `>`, and newlines in identity fields — a `%an`/`%cn` containing a literal `|` shifts the split so trailing content lands in `$email`, causing a legitimate commit to be misreported as an unapproved identity (fails closed, not an exploitable bypass, but fragile parsing for a security-relevant gate).",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "scripts/audit-authors.sh",
+      "line": "37",
+      "area": "correctness",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The `while ... < <(git log ...)` process substitution never checks `git log`'s exit status; if it fails or returns nothing, the loop body just never runs and the script reports \"clean\" and exits 0. Not reachable via the CI invocation today (no argument, defaults to `HEAD`), but would silently pass if the script is ever invoked with an untrusted `RANGE`.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "scripts/audit-templates.sh",
+      "line": "20",
+      "area": "maintainability",
+      "confidence": "high",
+      "tag": "nit",
+      "description": "`PRIVATE_FILE=\"${AUDIT_FINGERPRINTS_FILE:-.audit-fingerprints}\"` adds a second, undocumented env-var override for the fingerprints file path — it's never referenced by `ci.yml` and never mentioned in CONTRIBUTING.md's new \"Private leak-audit terms\" section, so it's a configuration surface with no consumer or documentation.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "CONTRIBUTING.md",
+      "line": "56-62",
+      "area": "docs",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The new \"Commit identity\" section restates AGENTS.md's Git-workflow paragraph almost verbatim (script name, \"fails CI\", the allowlist link, the same \"rewriting public history\" rationale), in the same file that just told the reader AGENTS.md is \"the one copy\" for house rules — the only new content is the \"check git config user.email\" tip, which could have been appended to a pointer instead of a restatement that will drift the next time one copy is edited.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "CONTRIBUTING.md",
+      "line": "58",
+      "area": "docs",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "\"fails the build\" is loose here: the same document uses \"build\" elsewhere specifically for `npm run build`/`tsc`, which `audit-authors.sh` has nothing to do with (it runs as its own CI step). AGENTS.md's own new paragraph correctly says \"fails CI\" — worth matching that wording to avoid implying `npm run build` catches a bad commit identity locally.",
+      "body": null,
+      "suggestion": null
+    }
+  ],
+  "refuted_findings": [],
+  "process_issues": [],
+  "comments_posted_actual": 1,
+  "is_error": false,
+  "cost_usd": 4.369940550000001,
+  "duration_ms": 704182,
+  "num_turns": 29,
+  "tokens": {
+    "input": 31,
+    "output": 32556,
+    "cache_read": 849576,
+    "cache_creation": 78659,
+    "total": 960822
+  }
+}
