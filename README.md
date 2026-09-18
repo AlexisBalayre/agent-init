@@ -31,7 +31,7 @@ three times, a hook wired four ways, a convention updated in one file and stale 
 
 ```
 .agents/
-├── skills/          # SKILL.md — read natively by opencode and Mistral Vibe
+├── skills/          # SKILL.md — read natively by four of the five tools
 ├── agents/          # intersection-only frontmatter, symlinked where portable
 ├── hooks/
 │   ├── policies/    # tool-agnostic shell: git safety, quality gate, naming
@@ -47,8 +47,8 @@ three times, a hook wired four ways, a convention updated in one file and stale 
 
 Two facts make this work, both verified in
 [`docs/capability-matrix.md`](docs/capability-matrix.md): all five tools follow the Anthropic
-Agent Skills spec, and `.agents/skills/` is already read natively by **three of them** — Codex,
-opencode and Mistral Vibe. Only Claude Code and Cursor need the symlink.
+Agent Skills spec, and `.agents/skills/` is already read natively by **four of them** — Codex,
+opencode, Mistral Vibe and Cursor. Only Claude Code needs the symlink.
 
 ## Design in one table
 
@@ -68,7 +68,7 @@ opencode and Mistral Vibe. Only Claude Code and Cursor need the symlink.
 | :-- | :-- | :-- | :-- | :-- |
 | Claude Code | `CLAUDE.md` -> `AGENTS.md` | symlink | `settings.json` | yes |
 | Codex | native | native | `config.toml` block | yes |
-| Cursor | native | symlink | `hooks.json` | yes |
+| Cursor | native | native | `hooks.json` | yes |
 | Mistral Vibe | native | native | `hooks.toml` block | yes |
 | opencode | native | native | JS plugin shim | no — needs a live session |
 
