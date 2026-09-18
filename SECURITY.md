@@ -3,13 +3,13 @@
 ## Reporting a vulnerability
 
 Please report privately through GitHub's
-[security advisories](https://github.com/AlexisBalayre/agent-init/security/advisories/new) rather
+[security advisories](https://github.com/AlexisBalayre/agentspine/security/advisories/new) rather
 than a public issue. I will confirm receipt, and credit you in the advisory unless you prefer
 otherwise.
 
 ## What is in scope
 
-`agent-init` writes configuration that coding agents execute, so the interesting surface is what
+`agentspine` writes configuration that coding agents execute, so the interesting surface is what
 that configuration can be talked into doing:
 
 - **A hook policy that fails to block.** `git-safety` refusing a destructive command is the whole
@@ -30,7 +30,7 @@ that configuration can be talked into doing:
 - Prompt injection that only changes what the model *says*, with no write path and no secret
   exposure. Worth reporting as an issue, but not an advisory.
 - The tools themselves (Claude Code, Codex, opencode, Mistral Vibe, Cursor). Report those upstream;
-  if the wiring `agent-init` emits makes such a bug reachable when it otherwise would not be, that
+  if the wiring `agentspine` emits makes such a bug reachable when it otherwise would not be, that
   part is in scope here.
 
 ## Supported versions

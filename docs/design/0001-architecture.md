@@ -2,20 +2,20 @@
 
 Status: accepted · Date: 2026-09-14
 
-The nine decisions that define `agent-init`. Each records the option taken, the rejected
+The nine decisions that define `agentspine`. Each records the option taken, the rejected
 alternatives, and the cost accepted.
 
 ## 1. Scaffolder, not sync engine
 
-`agent-init` writes files once. It is not a compiler that keeps a canonical source and rendered
+`agentspine` writes files once. It is not a compiler that keeps a canonical source and rendered
 per-tool outputs in sync.
 
 - **Rejected:** a compiler with `--check` drift detection in CI; a package manager with a registry.
 - **Cost accepted:** a user's setup fossilises at the version they scaffolded.
 - **Mitigation:** a version stamp (tool version, selected options, per-file hash) is written at
-  scaffold time, so a future `agent-init diff` remains possible without committing to one now.
+  scaffold time, so a future `agentspine diff` remains possible without committing to one now.
 
-Delivery is `npx agent-init`. Templates ship **inside** the published package — never fetched at
+Delivery is `npx agentspine`. Templates ship **inside** the published package — never fetched at
 runtime — so the tool and its content version together and the CLI works offline.
 
 Constraints that follow: Node >= 20, ESM, near-zero runtime dependencies (npx cold start is the
@@ -84,7 +84,7 @@ Python API is expressible without hand-editing shell.
 - **Contract fixtures**: the real stdin payload each tool sends for each normalised event,
   captured by hand once, committed under `test/fixtures/<tool>/<event>.json`, and asserted
   against every adapter — including that the blocking path returns that tool's refusal shape.
-- `agent-init doctor`: runs where the tools are actually installed and authenticated, fires a
+- `agentspine doctor`: runs where the tools are actually installed and authenticated, fires a
   probe hook on a sentinel command, and reports per tool. It is also the bug-report format.
 - **Explicit non-goal:** live agent runs in CI (five auth'd CLIs, cost, flake, no headless Cursor).
 - **Cost accepted:** fixtures go stale silently when a tool changes its payload. Mitigated by a
@@ -123,7 +123,7 @@ The common case is a repo that already has a `CLAUDE.md` and a `.cursor/`.
 
 - Refuse to run on a dirty git tree without `--force`. Git is the backup.
 - Markdown: write if absent; otherwise insert or replace only between
-  `<!-- agent-init:start -->` and `<!-- agent-init:end -->`. This is also the re-run path.
+  `<!-- agentspine:start -->` and `<!-- agentspine:end -->`. This is also the re-run path.
 - JSON (`settings.json`, `hooks.json`): parse and deep-merge. Add the hooks block; leave
   permissions, MCP servers, and model settings alone. Warn and refuse on a genuine conflict rather
   than silently winning.
@@ -162,7 +162,7 @@ CI runs four jobs:
 
 1. `typecheck` and `build`
 2. `vitest` — golden files, schema validation, adapter contract fixtures
-3. `agent-init --check` — fails when the committed tree differs from what the current generator
+3. `agentspine --check` — fails when the committed tree differs from what the current generator
    would emit. This is the integration test: free, no API keys, and it catches a generator change
    the committed tree did not follow. It compares *content*, not inodes, so the shared trees this
    repo symlinks into `templates/` resolve to the same bytes a copy would and do not read as drift.
@@ -316,9 +316,9 @@ to stay portable.
 makes the next sync a diff rather than a translation. Nothing is published yet, so no installed
 base carries the old names.
 
-**The upstream template assumes a layout; agent-init cannot.** Its skills now read commands from
+**The upstream template assumes a layout; agentspine cannot.** Its skills now read commands from
 `.claude/project.env`, docs from a fixed `docs/` tree, the trunk from config, and a tracker through
-`.env` identifiers. A repository scaffolded by agent-init has none of these. The first port
+`.env` identifiers. A repository scaffolded by agentspine has none of these. The first port
 answered the same problem with "ask the project" in each skill, which made every skill ask. This
 one gives them a single place to look: a **project map**, a table in `AGENTS.md` outside the managed
 markers, naming the commands, the trunk, the tracker and where each kind of doc lives. Every host
@@ -345,7 +345,7 @@ that way, so `engineering` stays standalone.
 **Tracker wiring is host-neutral.** Upstream names one vendor's MCP tools and `TRACKER_*` variables,
 which the leak audit rejects by design. The planning skills instead use whatever tracker the session
 can reach, take identifiers from the map or ask once, and fall back to local markdown under
-`docs/plans/`. Upstream keeps that directory out of git with a pre-commit hook agent-init does not
+`docs/plans/`. Upstream keeps that directory out of git with a pre-commit hook agentspine does not
 emit, so the skills ask whether to commit or ignore it rather than claiming a guard that is absent.
 
 **Cost accepted: user-only skills are not user-only everywhere.** Nine skills at this point are
@@ -402,7 +402,7 @@ it; clean removes prefixed worktrees whose remote branch is gone.
   still start work in a worktree with no dependencies. The script now names the failed command.
 - **`.gitignore` gets a managed block** for `.worktrees/`, spliced with `#` markers, the same
   mechanism as the TOML blocks. The splice flag is renamed from `toml` to `hashComments` to say so.
-- **Dropped from the template's script:** the CodeGraph index step, since agent-init does not ship
+- **Dropped from the template's script:** the CodeGraph index step, since agentspine does not ship
   CodeGraph.
 - **Not added:** a git-safety rule blocking `git checkout -b` on the trunk in favour of worktrees.
   It would force one branching style on every project the hook lands in.
@@ -417,17 +417,17 @@ rejects. That reasoning holds only while the pipeline is absent, so the pipeline
 opt-in `ci-review` pack: the two skills plus `.github/workflows/claude-code-review.yml`. The pack
 requires `review`, whose reviewer agents it dispatches.
 
-**The deterministic half lives in agent-init, not in the user's repository.** The template carries
+**The deterministic half lives in agentspine, not in the user's repository.** The template carries
 ~1,000 lines of TypeScript, a `zod` dependency and a pnpm lockfile under `tools/review/`. Copying
 that would break the Node-free rule for every repo that enables the pack, including Python and Go
-ones. Instead the tooling is `agent-init review preflight|schema|post|metrics`, and the emitted
-workflow installs `agent-init` pinned to the version that scaffolded it. What lands in the
+ones. Instead the tooling is `agentspine review preflight|schema|post|metrics`, and the emitted
+workflow installs `agentspine` pinned to the version that scaffolded it. What lands in the
 repository is one YAML file. Node exists only on the CI runner, which already had to install it.
 
-- **Resolved in decision 23:** until agent-init was published, `npm install --global
-  agent-init@0.0.0` could not resolve and the install step failed red. v0.1.0 is on npm, so an
+- **Resolved in decision 23:** until agentspine was published, `npm install --global
+  agentspine@0.0.0` could not resolve and the install step failed red. v0.1.0 is on npm, so an
   emitted workflow installs the version that scaffolded it.
-- **Cost accepted: the CI contract is now agent-init's public API**, pinned per scaffold. A record
+- **Cost accepted: the CI contract is now agentspine's public API**, pinned per scaffold. A record
   written by one version is read by the retro under another, which is what `schema_version` is for.
 - **`zod` was not taken as a runtime dependency.** It did two jobs: emitting the contract as JSON
   Schema, and validating the model's output. The schema is now a frozen literal, generated once
@@ -437,7 +437,7 @@ repository is one YAML file. Node exists only on the CI runner, which already ha
 
 **A restore gap the layout creates, and closes.** claude-code-action restores the config it executes
 at startup (`CLAUDE.md`, `.claude/`, `.mcp.json`) from the base branch, so a PR cannot rewrite the
-reviewer that reviews it. In an agent-init repository `.claude/skills` and `.claude/agents` are
+reviewer that reviews it. In an agentspine repository `.claude/skills` and `.claude/agents` are
 symlinks into `.agents/`, and `.claude/settings.json` runs hook adapters from `.agents/hooks/`:
 none of that is covered by the action's list, so a PR could have supplied its own orchestrator,
 reviewer manifests or hook scripts to a job holding the review token. The emitted workflow extends
@@ -502,8 +502,8 @@ anyone. A documented gap beats an undocumented guarantee whose failure is silent
 
 Date: 2026-09-18
 
-`npx agent-init` now resolves. The version matters beyond convenience: decision 21 emits a workflow
-that installs `agent-init@<version>` to run its own review tooling, so until agent-init was
+`npx agentspine` now resolves. The version matters beyond convenience: decision 21 emits a workflow
+that installs `agentspine@<version>` to run its own review tooling, so until agentspine was
 published, that pack shipped a red step. The pin is written at scaffold time, which makes the CI contract
 between the workflow, the `pr-ci-review` skill and the poster immovable until someone re-scaffolds.
 
@@ -516,7 +516,7 @@ matrix names them). `0.1.0` says that honestly.
 than from the working tree: 95 files including `dist/`, every template, the seven reviewer agents
 and the fifteen Codex policy files; every emitted `.sh` still executable; then a real scaffold of a
 fresh repository with all five packs, `doctor` reporting the git-safety hook actually blocking its
-probe, `--check` clean on what had just been written, `agent-init review schema` emitting parseable
+probe, `--check` clean on what had just been written, `agentspine review schema` emitting parseable
 JSON Schema, and `.agents/scripts/worktree-create.sh` creating a worktree. A package that installs
 but cannot scaffold would have been invisible to the test suite, which runs from source.
 
@@ -545,3 +545,25 @@ never finding out.
 - **Cost accepted:** the copy fallback is a second real copy of the shared tree on Windows, which
   is the drift this project exists to prevent. It is the lesser failure: drift is visible in a diff,
   where a skill that silently never loads is not.
+
+## 25. The name
+
+Date: 2026-09-18
+
+`agentspine`. The first publish of `agent-init` was refused by npm: *"Package name too similar to
+existing package agentinit"*. The registry compares names with punctuation collapsed, so every
+`agent-<word>` candidate whose collapsed twin exists is refused, and so is the reverse. That rule
+disqualified `agentwire`, `agentfile`, `agentscaffold`, `agentsinit`, `polyagent`, `agentforge` and
+`agentbridge`, each of which has a hyphenated or collapsed twin already on the registry, and it
+makes `init-agents` unwise for a different reason: `agents-init` exists, so a name people hear
+spoken could land them on someone else's package.
+
+`agentspine` is one word, so there is no hyphen to misremember; nothing similar is registered in
+either spelling; and the metaphor is the product, one spine every agent reads from.
+
+- **Cost accepted:** a rename across 45 files, the repository, and the managed-block markers
+  (`<!-- agentspine:start -->`). Markers are the one part a user's repository keeps, so a later
+  rename would orphan the blocks in every scaffolded repo and leave `init` unable to find what it
+  wrote. Nothing was published under the old name, so this is the last cheap moment to do it.
+- **Rejected:** `@alexisbalayre/agent-init`. Scoped names skip the similarity check and would have
+  published immediately, at the price of an install line nobody repeats from memory.

@@ -9,7 +9,7 @@ const TURN_END = readFileSync(path.resolve("test/fixtures/claude-code/turn-end.j
 
 /** A throwaway repository with one dirty file and the given gate config. */
 function projectWithGate(gate: string, dirtyFile = "a.ts") {
-  const dir = mkdtempSync(path.join(tmpdir(), "agent-init-gate-"));
+  const dir = mkdtempSync(path.join(tmpdir(), "agentspine-gate-"));
   spawnSync("git", ["init", "-q"], { cwd: dir });
   writeFileSync(path.join(dir, dirtyFile), "export const x = 1;\n");
   mkdirSync(path.join(dir, ".agents"));
@@ -51,7 +51,7 @@ describe("quality gate", () => {
   });
 
   it("is a no-op when the project has no gate config", () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "agent-init-nogate-"));
+    const dir = mkdtempSync(path.join(tmpdir(), "agentspine-nogate-"));
     spawnSync("git", ["init", "-q"], { cwd: dir });
     expect(runGate(dir).status).toBe(0);
   });

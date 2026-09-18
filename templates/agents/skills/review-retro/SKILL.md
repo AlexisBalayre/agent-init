@@ -14,8 +14,8 @@ You run the retrospective for the automated review setup (the learn stage of the
 
 > **Setup:** the `ci/review-metrics` branch is produced by
 > [`claude-code-review.yml`](../../../.github/workflows/claude-code-review.yml), emitted by
-> agent-init's `ci-review` pack (it runs `/pr-ci-review` with the schema from
-> `agent-init review schema` and appends each run's record). Until that workflow is enabled and has history, the retro
+> agentspine's `ci-review` pack (it runs `/pr-ci-review` with the schema from
+> `agentspine review schema` and appends each run's record). Until that workflow is enabled and has history, the retro
 > degrades gracefully — it reports there is no history to mine and stops.
 
 ## Evidence

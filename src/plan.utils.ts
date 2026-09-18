@@ -64,7 +64,7 @@ export type PlanOptions = {
   /** Gate commands nobody confirmed are written commented out, never silently active. */
   confirmed: boolean;
   packs: Pack[];
-  /** Pinned into emitted CI, which installs this exact agent-init to run its review tooling. */
+  /** Pinned into emitted CI, which installs this exact agentspine to run its review tooling. */
   version: string;
 };
 
@@ -83,7 +83,7 @@ rather than repeating it.
 - Hook policies are shared shell scripts; each tool has a thin adapter in
   \`.agents/hooks/adapters/\`. The contract is \`.agents/hooks/CONTRACT.md\`.
 
-Managed by agent-init. Edit outside the markers, or edit \`.agents/\` directly.`;
+Managed by agentspine. Edit outside the markers, or edit \`.agents/\` directly.`;
 
 const CLAUDE_BODY = "@AGENTS.md";
 
@@ -148,14 +148,14 @@ timeout = 300`;
 
 // `match` is only valid on tool hooks, so post_agent must omit it.
 const vibeHooks = `[[hooks]]
-name = "agent-init-git-safety"
+name = "agentspine-git-safety"
 type = "pre_tool"
 match = "*"
 command = '${REPO_ROOT_CMD}/.agents/hooks/adapters/mistral-vibe.sh git-safety'
 timeout = 5
 
 [[hooks]]
-name = "agent-init-quality-gate"
+name = "agentspine-quality-gate"
 type = "post_agent"
 command = '${REPO_ROOT_CMD}/.agents/hooks/adapters/mistral-vibe.sh quality-gate'
 timeout = 300`;
@@ -272,7 +272,7 @@ export function buildPlan(options: PlanOptions): Action[] {
       actions.push({ kind: "skip", target, reason: "already present; never overwritten" });
     } else {
       const workflow = readFileSync(path.join(templates, "github/workflows/claude-code-review.yml"), "utf8");
-      actions.push({ kind: "create", target, content: workflow.replaceAll("__AGENT_INIT_VERSION__", version) });
+      actions.push({ kind: "create", target, content: workflow.replaceAll("__AGENTSPINE_VERSION__", version) });
     }
   }
 
@@ -308,8 +308,8 @@ export function buildPlan(options: PlanOptions): Action[] {
     if (hooks) {
       actions.push({
         kind: "copy",
-        target: ".opencode/plugins/agent-init.js",
-        from: path.join(templates, "agents/plugins/opencode/agent-init.js"),
+        target: ".opencode/plugins/agentspine.js",
+        from: path.join(templates, "agents/plugins/opencode/agentspine.js"),
       });
     }
   }

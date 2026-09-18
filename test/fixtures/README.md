@@ -7,4 +7,4 @@ returns that tool's own refusal shape.
 Events: `pre-tool:bash`, `post-edit`, `turn-end`.
 
 These go stale silently when a tool changes its payload. That is a known, accepted risk; see
-decision 6. `agent-init doctor` is the live check.
+decision 6. `agentspine doctor` is the live check.

@@ -27,7 +27,7 @@ const CLI = path.resolve("src/cli.ts");
 
 describe.skipIf(PYTHON === null)("emitted Vibe config, checked by Vibe itself", () => {
   it("parses under Vibe's strict loader with no issues", () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "agent-init-vibe-"));
+    const dir = mkdtempSync(path.join(tmpdir(), "agentspine-vibe-"));
     spawnSync("git", ["init", "-q"], { cwd: dir });
     mkdirSync(path.join(dir, ".vibe"));
     spawnSync(TSX, [CLI, "--dir", dir, "--yes", "--tools", "mistral-vibe"], { encoding: "utf8" });

@@ -17,7 +17,7 @@ function git(cwd: string, ...args: string[]) {
  * any payload carrying inline comments, the way GitHub 422s on a bad position.
  */
 function fixture({ failReviewsWithComments = false } = {}) {
-  const dir = mkdtempSync(path.join(tmpdir(), "agent-init-review-"));
+  const dir = mkdtempSync(path.join(tmpdir(), "agentspine-review-"));
   const repo = path.join(dir, "repo");
   spawnSync("git", ["init", "-q", "-b", "main", repo]);
   writeFileSync(path.join(repo, "a.ts"), "one\ntwo\nthree\nfour\n");
@@ -96,7 +96,7 @@ const calls = (log: string) =>
       return { args, input };
     });
 
-describe("agent-init review post", () => {
+describe("agentspine review post", () => {
   it("anchors an important finding on the diff and pins a success status", () => {
     const fx = fixture();
     const result = runReview("post", fx, { REVIEW_STEP_OUTCOME: "success", REVIEW_STRUCTURED_OUTPUT: importantAt("2") });
@@ -148,7 +148,7 @@ describe("agent-init review post", () => {
   });
 });
 
-describe("agent-init review metrics", () => {
+describe("agentspine review metrics", () => {
   it("records a failed step as errored even when its output parsed", () => {
     const fx = fixture();
     const output = path.join(fx.dir, "record.json");
@@ -187,7 +187,7 @@ function workflowStep(name: string): string {
 
 describe("the workflow's config restore", () => {
   it("runs the base branch's reviewer config, and keeps the PR's copy only for reading", () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "agent-init-restore-"));
+    const dir = mkdtempSync(path.join(tmpdir(), "agentspine-restore-"));
     spawnSync("git", ["init", "-q", "-b", "main", dir]);
     spawnSync("mkdir", ["-p", path.join(dir, ".agents/skills/pr-ci-review")]);
     writeFileSync(path.join(dir, ".agents/skills/pr-ci-review/SKILL.md"), "trusted\n");

@@ -1,5 +1,5 @@
 {
-  "name": "agent-init",
+  "name": "agentspine",
   "version": "0.1.0",
   "description": "One-shot scaffolder for a shared agent setup across Claude Code, Codex, opencode, Mistral Vibe, and Cursor.",
   "type": "module",
@@ -7,7 +7,7 @@
   "author": "Alexis Balayre",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AlexisBalayre/agent-init.git"
+    "url": "git+https://github.com/AlexisBalayre/agentspine.git"
   },
   "keywords": [
     "agents",
@@ -33,7 +33,7 @@
     "node": ">=20"
   },
   "bin": {
-    "agent-init": "dist/cli.js"
+    "agentspine": "dist/cli.js"
   },
   "files": [
     "dist",

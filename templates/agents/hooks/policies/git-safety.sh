@@ -17,7 +17,7 @@ fi
 TRUNK="${GIT_TRUNK:-main}"
 
 block() {
-  printf 'BLOCKED by agent-init git-safety: %s\n' "$1" >&2
+  printf 'BLOCKED by agentspine git-safety: %s\n' "$1" >&2
   exit 2
 }
 

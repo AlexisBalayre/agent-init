@@ -1,10 +1,10 @@
 # Capability matrix
 
-What each target tool actually supports, and therefore what `agent-init` emits for it.
+What each target tool actually supports, and therefore what `agentspine` emits for it.
 
 **Verified: 2026-09-14** against each tool's own documentation, or its source where the docs are
 silent. Versions are not pinned yet. These five move fast; treat any row older than a release
-cycle as unverified, and re-run `agent-init doctor` after upgrading a tool.
+cycle as unverified, and re-run `agentspine doctor` after upgrading a tool.
 
 ## Discovery paths
 
@@ -123,7 +123,7 @@ restores implicit invocation. A test asserts the emitted payload for that reason
 | opencode | not installed | 2026-09-14 | docs only |
 | Cursor | not installed | 2026-09-14 | docs only |
 
-"Docs only" means nobody has yet run `agent-init` against that tool and watched a hook fire. The
+"Docs only" means nobody has yet run `agentspine` against that tool and watched a hook fire. The
 rows are honest about which claims are tested and which are read.
 
 ## Sources

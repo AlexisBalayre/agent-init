@@ -10,12 +10,12 @@ import { PACKS, buildPlan, type Pack } from "./plan.utils.js";
 
 const TEMPLATES = fileURLToPath(new URL("../templates", import.meta.url));
 
-const USAGE = `agent-init — one shared agent setup for several coding agents
+const USAGE = `agentspine — one shared agent setup for several coding agents
 
 Usage
-  npx agent-init [init]      Scaffold .agents/ and wire each detected tool
-  npx agent-init doctor      Probe the wiring and verify hooks actually block
-  npx agent-init review <step>
+  npx agentspine [init]      Scaffold .agents/ and wire each detected tool
+  npx agentspine doctor      Probe the wiring and verify hooks actually block
+  npx agentspine review <step>
                              CI review tooling, run by the emitted workflow:
                              preflight, schema, post, metrics
 
@@ -137,11 +137,11 @@ async function init(options: Options): Promise<number> {
     if (options.json) {
       process.stdout.write(`${JSON.stringify({ root, tools, drifted: drifted.map((a) => a.target) }, null, 2)}\n`);
     } else if (drifted.length === 0) {
-      process.stdout.write(`agent-init --check: ${root} matches what init would emit.\n`);
+      process.stdout.write(`agentspine --check: ${root} matches what init would emit.\n`);
     } else {
-      process.stdout.write(`agent-init --check: ${drifted.length} path(s) differ from what init would emit\n\n`);
+      process.stdout.write(`agentspine --check: ${drifted.length} path(s) differ from what init would emit\n\n`);
       for (const action of drifted) process.stdout.write(`  drift  ${action.target}\n`);
-      process.stdout.write("\nRun agent-init to bring them back in line.\n");
+      process.stdout.write("\nRun agentspine to bring them back in line.\n");
     }
     return drifted.length === 0 ? 0 : 1;
   }
@@ -150,7 +150,7 @@ async function init(options: Options): Promise<number> {
     process.stdout.write(`${JSON.stringify({ root, tools, stacks, plan, applied: false }, null, 2)}\n`);
     if (options.dryRun) return 0;
   } else {
-    process.stdout.write(`agent-init -> ${root}\ntools: ${tools.join(", ")}\n\n`);
+    process.stdout.write(`agentspine -> ${root}\ntools: ${tools.join(", ")}\n\n`);
     for (const action of plan) process.stdout.write(`  ${describe(action)}\n`);
     process.stdout.write("\n");
   }
@@ -176,7 +176,7 @@ async function init(options: Options): Promise<number> {
   if (options.json) process.stdout.write(`${JSON.stringify({ root, tools, applied }, null, 2)}\n`);
   else {
     for (const entry of applied) process.stdout.write(`  ${entry.outcome.padEnd(14)}${entry.target}\n`);
-    process.stdout.write(`\nDone. Verify with: npx agent-init doctor\n`);
+    process.stdout.write(`\nDone. Verify with: npx agentspine doctor\n`);
   }
   return 0;
 }
@@ -231,7 +231,7 @@ const SKILL_PATHS: Partial<Record<Tool, string>> = {
 
 const WIRING: Record<Tool, { file: string; needle: string }> = {
   "claude-code": { file: ".claude/settings.json", needle: ".agents/hooks/adapters" },
-  opencode: { file: ".opencode/plugins/agent-init.js", needle: "" },
+  opencode: { file: ".opencode/plugins/agentspine.js", needle: "" },
   codex: { file: ".codex/config.toml", needle: ".agents/hooks/adapters" },
   "mistral-vibe": { file: ".vibe/hooks.toml", needle: ".agents/hooks/adapters" },
   cursor: { file: ".cursor/hooks.json", needle: ".agents/hooks/adapters" },
@@ -298,7 +298,7 @@ function doctor(options: Options): number {
   if (options.json) {
     process.stdout.write(`${JSON.stringify({ root, checks }, null, 2)}\n`);
   } else {
-    process.stdout.write(`agent-init doctor -> ${root}\n\n`);
+    process.stdout.write(`agentspine doctor -> ${root}\n\n`);
     for (const check of checks) {
       process.stdout.write(`  ${check.ok ? "ok  " : "FAIL"}  ${check.name.padEnd(24)}${check.detail}\n`);
     }
@@ -310,7 +310,7 @@ function doctor(options: Options): number {
 
 function fail(options: Options, message: string) {
   if (options.json) process.stdout.write(`${JSON.stringify({ error: message }, null, 2)}\n`);
-  else process.stderr.write(`agent-init: ${message}\n`);
+  else process.stderr.write(`agentspine: ${message}\n`);
 }
 
 const REVIEW_STEPS = ["preflight", "schema", "post", "metrics"] as const;
@@ -327,7 +327,7 @@ async function review(step: string | undefined): Promise<number> {
     case "post": (await import("./review/post.script.js")).main(); return 0;
     case "metrics": (await import("./review/metrics.script.js")).main(); return 0;
     default:
-      process.stderr.write(`agent-init: review needs one of ${REVIEW_STEPS.join(", ")}\n`);
+      process.stderr.write(`agentspine: review needs one of ${REVIEW_STEPS.join(", ")}\n`);
       return 1;
   }
 }
@@ -347,7 +347,7 @@ async function main(argv: string[]): Promise<number> {
 
   const parsed = parse(argv);
   if ("error" in parsed) {
-    process.stderr.write(`agent-init: ${parsed.error}\n\n${USAGE}`);
+    process.stderr.write(`agentspine: ${parsed.error}\n\n${USAGE}`);
     return 1;
   }
 

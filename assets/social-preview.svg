@@ -13,7 +13,7 @@
   <rect width="1280" height="640" fill="url(#bg)"/>
   <rect x="0" y="0" width="1280" height="6" fill="url(#rule)"/>
 
-  <text x="88" y="150" font-size="72" font-weight="700" fill="#e6edf3" letter-spacing="-1.5">agent-init</text>
+  <text x="88" y="150" font-size="72" font-weight="700" fill="#e6edf3" letter-spacing="-1.5">agentspine</text>
   <text x="88" y="212" font-size="31" fill="#8b949e">Five coding agents, five config directories, one setup.</text>
 
   <!-- the shared tree -->
@@ -42,7 +42,7 @@
   </g>
 
   <rect x="88" y="512" width="470" height="62" rx="10" fill="#010409" stroke="#30363d"/>
-  <text x="112" y="552" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="27" fill="#e6edf3"><tspan fill="#3fb950">$</tspan> npx agent-init</text>
+  <text x="112" y="552" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="27" fill="#e6edf3"><tspan fill="#3fb950">$</tspan> npx agentspine</text>
 
   <text x="1192" y="552" font-size="23" fill="#6e7681" text-anchor="end">One copy. Hooks that block. Nothing pretended.</text>
 </svg>

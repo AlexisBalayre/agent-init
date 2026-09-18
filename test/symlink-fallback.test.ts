@@ -8,7 +8,7 @@ const TSX = path.resolve("node_modules/.bin/tsx");
 const CLI = path.resolve("src/cli.ts");
 
 function repo() {
-  const dir = mkdtempSync(path.join(tmpdir(), "agent-init-link-"));
+  const dir = mkdtempSync(path.join(tmpdir(), "agentspine-link-"));
   spawnSync("git", ["init", "-q", "-b", "main", dir]);
   writeFileSync(path.join(dir, "package.json"), '{ "name": "demo" }\n');
   mkdirSync(path.join(dir, ".claude"));

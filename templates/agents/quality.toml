@@ -10,7 +10,7 @@
 #   lint       must exit 0; receives matched files as arguments; non-zero blocks the turn
 #   typecheck  run once, no arguments
 #
-# agent-init pre-fills these from repo detection. Anything it inferred without your
+# agentspine pre-fills these from repo detection. Anything it inferred without your
 # confirmation is left commented out on purpose: a gate you believe is running but
 # is not is worse than one that is obviously unfinished.
 
