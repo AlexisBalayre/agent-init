@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-09-18T09:53:51.111Z",
+  "repository": "AlexisBalayre/agent-init",
+  "run_id": "35331187972",
+  "run_url": "https://github.com/AlexisBalayre/agent-init/actions/runs/35331187972",
+  "actor": "AlexisBalayre",
+  "commit_sha": "d9e81dceceeae5e9f3e5e475a564cd406cb89a10",
+  "source": "pr",
+  "pr_number": 18,
+  "action": "review",
+  "reviewers_spawned": [
+    "context",
+    "conventions",
+    "docs"
+  ],
+  "reviewers_skipped": [
+    "correctness",
+    "security",
+    "maintainability"
+  ],
+  "review_mode": "full",
+  "incremental_from_sha": null,
+  "prior_importants": [],
+  "findings": [
+    {
+      "file": "CONTRIBUTING.md",
+      "line": "48-65",
+      "area": "docs",
+      "confidence": "high",
+      "tag": "nit",
+      "description": "The \"House rules worth knowing before you write code\" section restates AGENTS.md's rules (Node-free output, near-zero deps, naming taxonomy, comments, git workflow) near-verbatim in a second file — exactly the multi-file drift risk this project's own README calls out as the problem agent-init solves. A one-line pointer to AGENTS.md would avoid having two places to keep in sync.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "README.md",
+      "line": "18-21",
+      "area": "docs",
+      "confidence": "high",
+      "tag": "nit",
+      "description": "Two of the four new lede bullets (\"Node-free output\", \"No pretending\") restate the \"Design in one table\" rows below almost word-for-word within the same document (compare lines ~59 and ~64), so a reader hits the same fact twice within 40 lines.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "SECURITY.md",
+      "line": "7",
+      "area": "docs",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "SECURITY.md's \"I will confirm receipt, and credit you in the advisory\" is the only first-person voice among the new docs in this PR; CONTRIBUTING.md instead uses the collective \"us\" (\"any breakage lands on us first\"). The two new files disagree on solo-maintainer vs. team framing, which reads as unintentional.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "CONTRIBUTING.md",
+      "line": "73-77",
+      "area": "docs",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The closing \"Reporting a bug\" section restates in prose exactly what bug_report.yml already encodes as structured fields, and the same \"paste doctor --json\" instruction is repeated a third time in README.md's new \"Contributing\" section — three sites with no cross-reference to keep in sync if the bug-report format changes.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": ".github/ISSUE_TEMPLATE/bug_report.yml",
+      "line": "6-9",
+      "area": "docs",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The intro \"agent-init doctor --json answers most of this. Paste it below and skip the fields it covers\" overpromises: doctor's JSON output (jq presence, hooks scaffolding, per-tool wiring/blocking) doesn't actually cover any of the form's required fields (what-happened, area, env) or even fully cover the optional tools field (no version info), so a contributor taking \"skip the fields it covers\" literally has nothing they can actually skip.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": ".github/ISSUE_TEMPLATE/config.yml",
+      "line": "7",
+      "area": "context",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The \"Security vulnerability\" contact link points at /security/advisories/new, which only resolves to a usable private report form if \"Private vulnerability reporting\" is enabled in the repo's Security settings — a setting this diff can't confirm and is worth the maintainer checking out-of-band.",
+      "body": null,
+      "suggestion": null
+    }
+  ],
+  "refuted_findings": [
+    {
+      "file": "SECURITY.md",
+      "line": "19-23",
+      "area": "conventions",
+      "confidence": "high",
+      "tag": "important",
+      "description": "SECURITY.md states the CI review model's job holds read-only permissions and a separate job posts, which the conventions reviewer read as contradicting docs/design/0001-architecture.md decision 21's \"worth doing, not done here\" sentence about splitting the poster into its own job.",
+      "refutation": "Validated directly against .github/workflows/claude-code-review.yml (confirmed unmodified by this PR). The claude-review job's permissions block (lines 75-78) grants only contents:read, pull-requests:read, issues:read; a separate post-review job (lines 272-281) holds pull-requests:write. The workflow's own inline comments (lines 72-74, 232-234) state this split as current design fact: \"the poster job writes them... this job's token... cannot write to the PR at all.\" SECURITY.md's claim matches the actually-shipped pipeline exactly. The ADR's \"not done here\" sentence is stale prose left over from the same squash-merge commit (bcd7d72, PR #17) that actually shipped the split — a pre-existing documentation inconsistency between the ADR and the workflow, not something this PR introduces or misdescribes."
+    }
+  ],
+  "process_issues": [],
+  "comments_posted_actual": 0,
+  "is_error": false,
+  "cost_usd": 2.9147531,
+  "duration_ms": 460393,
+  "num_turns": 34,
+  "tokens": {
+    "input": 45,
+    "output": 24824,
+    "cache_read": 1283848,
+    "cache_creation": 74086,
+    "total": 1382803
+  }
+}
