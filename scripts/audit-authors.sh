@@ -27,7 +27,7 @@ is_allowed() {
 }
 
 # Read the log up front so a git failure cannot look like an empty, and therefore clean, history.
-if ! log=$(git log --format='%h|author|%ae|%an%n%h|committer|%ce|%cn' "$RANGE" 2>&1); then
+if ! log=$(git log --format='%h|author|%ae%n%h|committer|%ce' "$RANGE" 2>&1); then
   printf 'audit-authors: could not read the history for %s: %s\n' "$RANGE" "$log" >&2
   exit 1
 fi
@@ -37,13 +37,21 @@ if [ -z "$log" ]; then
 fi
 
 status=0
-# The address comes before the name in the format above. Git forbids only <, > and newlines in an
-# identity, so a name containing the | delimiter would shift the split; putting the name last
-# means the overflow lands there harmlessly rather than corrupting the address being checked.
-while IFS='|' read -r sha kind email name; do
-  [ -n "$email" ] || continue
+# The address is the last field, and read gives the last variable the rest of the line verbatim,
+# so an address containing the | delimiter arrives whole and fails the exact-match allowlist
+# rather than being truncated into something that passes. Git forbids only <, > and newlines in an
+# identity, so | is legal in both name and address; the name is therefore not parsed at all, and
+# is looked up separately when a failure needs reporting. The two fields ahead of the address are
+# an abbreviated hash and a literal, neither of which can contain a delimiter.
+while IFS='|' read -r sha kind email; do
+  [ -n "$sha" ] || continue
   lower=$(printf '%s' "$email" | tr '[:upper:]' '[:lower:]')
   if ! is_allowed "$lower"; then
+    if [ "$kind" = author ]; then
+      name=$(git log -1 --format='%an' "$sha")
+    else
+      name=$(git log -1 --format='%cn' "$sha")
+    fi
     printf 'Unapproved %s identity on %s: %s <%s>\n' "$kind" "$sha" "$name" "$email" >&2
     status=1
   fi
