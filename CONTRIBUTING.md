@@ -15,7 +15,7 @@ the rules below.
 ```
 
 That is deliberate: this repository is scaffolded by its own tool, so editing a skill while working
-here edits the shipped skill, and any breakage lands here first. Edit either path; they are the
+here edits the shipped skill, and any breakage surfaces here before it reaches anyone else. Edit either path; they are the
 same bytes. What you must not do is add a file under `.agents/` that has no counterpart in
 `templates/`, because `agent-init --check` compares the committed tree against what the generator
 would emit and will fail.
@@ -52,12 +52,10 @@ the one copy: Node-free output, near-zero runtime dependencies, never claiming p
 not have, never shipping employer-specific content, the naming taxonomy, and the comment rule. Read
 it before your first change.
 
-Two things it does not say, because they are about reviewing rather than writing:
+One thing it does not say, because it is about reviewing rather than writing:
 
 - **A guard nobody has seen fail is not yet a guard.** If you add a check, break the thing it
   protects, watch it fail, then say so in the pull request.
-- **Facts about the five tools come from their docs**, with the source and date recorded in the
-  matrix. Where the docs are silent, read the tool's source and cite file and line.
 
 ## Design decisions
 
