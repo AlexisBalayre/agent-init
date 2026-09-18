@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-09-18T15:07:39.994Z",
+  "repository": "AlexisBalayre/agentspine",
+  "run_id": "35359831282",
+  "run_url": "https://github.com/AlexisBalayre/agentspine/actions/runs/35359831282",
+  "actor": "AlexisBalayre",
+  "commit_sha": "2c58079bdb8102dad05f793f74cc7b4fefa7d493",
+  "source": "pr",
+  "pr_number": 24,
+  "action": "review",
+  "reviewers_spawned": [
+    "correctness",
+    "security",
+    "conventions",
+    "maintainability",
+    "docs"
+  ],
+  "reviewers_skipped": [
+    "context"
+  ],
+  "review_mode": "incremental",
+  "incremental_from_sha": "27b02096577303082d93b787f3935f6fbe15ece3",
+  "prior_importants": [
+    {
+      "file": "scripts/audit-authors.sh",
+      "line": "30,43",
+      "status": "resolved"
+    }
+  ],
+  "findings": [
+    {
+      "file": "scripts/audit-authors.sh",
+      "line": "50-54",
+      "area": "maintainability",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The new lazy name-lookup adds two near-identical `git log -1` branches differing only in the format specifier (%an vs %cn), even though `$kind` (author/committer) already encodes which one to use via its first letter. Could collapse to `git log -1 --format=\"%${kind:0:1}n\" \"$sha\"`, but given this only runs on the rare violation path in a ~15-line script, the explicit if/else is also defensible for readability.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "scripts/audit-authors.sh",
+      "line": "44-45",
+      "area": "docs",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The closing sentence ('The two fields ahead of the address are an abbreviated hash and a literal, neither of which can contain a delimiter.') just restates what's already visible five lines above in the git log --format string (line 30: '%h|author|%ae%n%h|committer|%ce') — an abbreviated hash and a hardcoded 'author'/'committer' literal obviously can't contain a pipe. It adds length without a non-obvious why, running the comment longer than the insight it carries (AGENTS.md Comments: WHY-not-WHAT).",
+      "body": null,
+      "suggestion": null
+    }
+  ],
+  "refuted_findings": [],
+  "process_issues": [],
+  "comments_posted_actual": 0,
+  "is_error": false,
+  "cost_usd": 1.68201765,
+  "duration_ms": 339764,
+  "num_turns": 23,
+  "tokens": {
+    "input": 23,
+    "output": 14547,
+    "cache_read": 480441,
+    "cache_creation": 46979,
+    "total": 541990
+  }
+}
