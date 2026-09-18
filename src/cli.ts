@@ -227,7 +227,6 @@ const PROBES: Partial<Record<Tool, Probe>> = {
 /** Where each tool looks for skills, when that is not the shared tree itself. */
 const SKILL_PATHS: Partial<Record<Tool, string>> = {
   "claude-code": ".claude/skills",
-  cursor: ".cursor/skills",
 };
 
 const WIRING: Record<Tool, { file: string; needle: string }> = {

@@ -299,11 +299,7 @@ export function buildPlan(options: PlanOptions): Action[] {
   }
 
   if (tools.includes("cursor")) {
-    actions.push(
-      symlink
-        ? { kind: "symlink", target: ".cursor/skills", to: "../.agents/skills" }
-        : { kind: "copy-dir", target: ".cursor/skills", from: abs(".agents/skills") },
-    );
+    actions.push({ kind: "skip", target: ".cursor/skills", reason: "cursor reads .agents/skills natively" });
     if (hooks) actions.push({ kind: "merge-json", target: ".cursor/hooks.json", value: cursorHooks });
   }
 
