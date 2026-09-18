@@ -1,0 +1,57 @@
+name: Bug report
+description: Something agent-init emitted, wired or blocked is wrong
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        `agent-init doctor --json` answers most of this. Paste it below and skip the fields it covers.
+  - type: textarea
+    id: doctor
+    attributes:
+      label: doctor output
+      description: Output of `npx agent-init doctor --json`, if the repository is already scaffolded.
+      render: json
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you ran, what you expected, and what you got instead.
+      placeholder: |
+        Ran: npx agent-init --packs thinking --tools codex
+        Expected: ...
+        Got: ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Scaffolding (what init writes or merges)
+        - Hooks (a policy that did not block, or blocked wrongly)
+        - Skills or agents content
+        - CI review pipeline (--packs ci-review)
+        - doctor
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: tools
+    attributes:
+      label: Tool and version
+      description: Which coding agent, and its version. A hook problem is usually specific to one host.
+      placeholder: "Claude Code 2.1.270"
+  - type: input
+    id: env
+    attributes:
+      label: OS, Node, jq
+      placeholder: "macOS 15.3, Node 22.11, jq 1.7.1"
+    validations:
+      required: true
+  - type: checkboxes
+    id: blocking
+    attributes:
+      label: If a hook failed to block
+      options:
+        - label: I confirmed the wiring exists (doctor reports it wired) and the probe still did not block
