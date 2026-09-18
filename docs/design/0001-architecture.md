@@ -349,9 +349,9 @@ can reach, take identifiers from the map or ask once, and fall back to local mar
 emit, so the skills ask whether to commit or ignore it rather than claiming a guard that is absent.
 
 **Cost accepted: user-only skills are not user-only everywhere.** Nine skills at this point are
-meant to fire only when a human names them, marked with `disable-model-invocation: true` (fifteen
-once decision 19 landed the rest of the template's skills; the frontmatter is the authoritative
-list). Verified 2026-09-17, only
+meant to fire only when a human names them, marked with `disable-model-invocation: true` (fifteen once
+decision 19 added four more and decision 21 restored `pr-ci-review` and `review-retro`; the
+frontmatter is the authoritative list). Verified 2026-09-17, only
 Claude Code and Cursor honour it. Codex and opencode each have a different native switch, unbuilt;
 Mistral Vibe has none. On those three the skills are model-invocable and their descriptions load
 into context. The gap is recorded in the capability matrix rather than emulated.
