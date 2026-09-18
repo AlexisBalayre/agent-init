@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-09-18T08:59:39.190Z",
+  "repository": "AlexisBalayre/agent-init",
+  "run_id": "35326643061",
+  "run_url": "https://github.com/AlexisBalayre/agent-init/actions/runs/35326643061",
+  "actor": "AlexisBalayre",
+  "commit_sha": "886e6e08453f05767e368ba0d0339476140e59a4",
+  "source": "pr",
+  "pr_number": 16,
+  "action": "review",
+  "reviewers_spawned": [
+    "correctness",
+    "conventions",
+    "maintainability",
+    "docs"
+  ],
+  "reviewers_skipped": [
+    "security",
+    "context"
+  ],
+  "review_mode": "incremental",
+  "incremental_from_sha": "623426b4fec98c3cb1ba0b7a906abda79caea8a9",
+  "prior_importants": [
+    {
+      "file": "docs/design/0001-architecture.md",
+      "line": "351-354",
+      "status": "resolved"
+    },
+    {
+      "file": "templates/agents/skills/writing-for-agents/SKILL-MECHANICS.md",
+      "line": "10",
+      "status": "resolved"
+    }
+  ],
+  "findings": [],
+  "refuted_findings": [],
+  "process_issues": [],
+  "comments_posted_actual": 0,
+  "is_error": false,
+  "cost_usd": 2.0194552999999993,
+  "duration_ms": 321870,
+  "num_turns": 20,
+  "tokens": {
+    "input": 31,
+    "output": 13853,
+    "cache_read": 665793,
+    "cache_creation": 62044,
+    "total": 741721
+  }
+}
