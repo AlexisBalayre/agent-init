@@ -348,8 +348,10 @@ can reach, take identifiers from the map or ask once, and fall back to local mar
 `docs/plans/`. Upstream keeps that directory out of git with a pre-commit hook agent-init does not
 emit, so the skills ask whether to commit or ignore it rather than claiming a guard that is absent.
 
-**Cost accepted: user-only skills are not user-only everywhere.** Nine skills are meant to fire only
-when a human names them, marked with `disable-model-invocation: true`. Verified 2026-09-17, only
+**Cost accepted: user-only skills are not user-only everywhere.** Nine skills at this point are
+meant to fire only when a human names them, marked with `disable-model-invocation: true` (fifteen once
+decision 19 added four more and decision 21 restored `pr-ci-review` and `review-retro`; the
+frontmatter is the authoritative list). Verified 2026-09-17, only
 Claude Code and Cursor honour it. Codex and opencode each have a different native switch, unbuilt;
 Mistral Vibe has none. On those three the skills are model-invocable and their descriptions load
 into context. The gap is recorded in the capability matrix rather than emulated.
@@ -465,3 +467,32 @@ the workflow's comment now says what the list does and does not buy.
 shipped agents because the key is not portable. Left there, `correctness` and `security` would
 inherit the orchestrator's sonnet and the "never downgraded" promise would be quietly false, so
 `pr-ci-review` now sets each reviewer's and validator's model explicitly when it spawns them.
+
+## 22. User-invoked skills on a host that does not read the key
+
+Date: 2026-09-17
+
+Fifteen shipped skills are meant to fire only when a human names them, and they say so with
+`disable-model-invocation: true`. Decision 18 recorded the gap: only Claude Code and Cursor honour
+that key. Codex's own mechanism now ships, opencode's does not, and the reason for the asymmetry is
+what this decision records.
+
+**Codex: emitted.** Each user-invoked skill carries `agents/openai.yaml` beside its `SKILL.md` with
+`policy.allow_implicit_invocation: false`. Verified in Codex's docs and read in its source: the
+skill is dropped from every model-facing surface, and `$skill-name` still reaches it. Codex warns
+and ignores a file it cannot parse, and an ignored file means implicit invocation is quietly back
+on, so a test asserts the emitted payload line for line rather than trusting the write. The file is
+inert on the other four hosts, which ignore unknown files inside a skill directory.
+
+**opencode: documented, not emitted.** `permission.skill.<name>: "deny"` removes a skill from the
+model's list, which opencode documents. That a human can still invoke a denied skill is only true
+in its source, not in its docs, and it is the half the design depends on: if a release ever filters
+the slash-command list by the same permission, every user-invoked skill becomes unreachable by
+anyone. A documented gap beats an undocumented guarantee whose failure is silent and total.
+
+**Mistral Vibe: no route.** Its only related key, `user-invocable: false`, is the opposite switch.
+
+- **Cost accepted:** fifteen near-identical files, one per user-invoked skill, each a two-line
+  payload under the four comment lines that explain why it exists, because Codex reads the policy
+  per skill directory. A generator-side loop would hide them from the
+  `--check` gate that keeps the committed tree honest.

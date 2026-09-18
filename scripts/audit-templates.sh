@@ -13,6 +13,9 @@ EXCLUDE="templates/agents/quality.toml"
 FINGERPRINTS='acolad|sonarqube|sonar_|wiz_|linear\.app|atlassian|TRACKER_[A-Z_]+|OBSIDIAN_|\.internal\b'
 # Names and paths that only exist in the repository this content was extracted from.
 COUPLING='acme|docs/conventions/|pnpm-lock|_journal\.json|PROJ-[0-9]'
+# agent-init's own docs never land in a scaffolded repo, so shipped content citing them sends the
+# reader to a file they do not have.
+OWN_DOCS='docs/capability-matrix|docs/design/'
 
 status=0
 scan() {
@@ -27,6 +30,7 @@ scan() {
 
 scan "Employer or personal fingerprints in shipped content" "$FINGERPRINTS"
 scan "References to the originating repository" "$COUPLING"
+scan "References to agent-init's own docs, which a scaffolded repo does not have" "$OWN_DOCS"
 
 if [ "$status" -eq 0 ]; then
   printf 'templates/ clean: no employer, personal, or originating-repo references.\n'
