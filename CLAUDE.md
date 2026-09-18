@@ -1,7 +1,7 @@
-# agent-init
+# agentspine
 
 @AGENTS.md
 
-<!-- agent-init:start -->
+<!-- agentspine:start -->
 @AGENTS.md
-<!-- agent-init:end -->
+<!-- agentspine:end -->

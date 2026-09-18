@@ -1,5 +1,5 @@
-export const BLOCK_START = "<!-- agent-init:start -->";
-export const BLOCK_END = "<!-- agent-init:end -->";
+export const BLOCK_START = "<!-- agentspine:start -->";
+export const BLOCK_END = "<!-- agentspine:end -->";
 
 /**
  * Inserts or replaces our delimited block, leaving everything the user wrote untouched.

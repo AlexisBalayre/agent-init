@@ -14,7 +14,7 @@ function runCli(args: string[]) {
 
 /** A repository shaped like the common case: existing agent config the user cares about. */
 function demoRepo({ commit = true } = {}) {
-  const dir = mkdtempSync(path.join(tmpdir(), "agent-init-cli-"));
+  const dir = mkdtempSync(path.join(tmpdir(), "agentspine-cli-"));
   spawnSync("git", ["init", "-q"], { cwd: dir });
   writeFileSync(path.join(dir, "package.json"), '{ "name": "demo" }\n');
   writeFileSync(path.join(dir, "AGENTS.md"), "# Demo\n\nOur house rules.\n");
@@ -60,7 +60,7 @@ describe("init", () => {
     runCli(["--dir", repo, "--yes"]);
     const agents = readFileSync(path.join(repo, "AGENTS.md"), "utf8");
     expect(agents).toContain("Our house rules.");
-    expect(agents.match(/agent-init:start/g)).toHaveLength(1);
+    expect(agents.match(/agentspine:start/g)).toHaveLength(1);
   });
 
   it("merges into settings.json without discarding the user's keys", () => {
@@ -75,7 +75,7 @@ describe("init", () => {
     runCli(["--dir", repo, "--yes", "--force"]);
     const agents = readFileSync(path.join(repo, "AGENTS.md"), "utf8");
     const settings = JSON.parse(readFileSync(path.join(repo, ".claude/settings.json"), "utf8"));
-    expect(agents.match(/agent-init:start/g)).toHaveLength(1);
+    expect(agents.match(/agentspine:start/g)).toHaveLength(1);
     expect(settings.hooks.PreToolUse).toHaveLength(1);
     expect(settings.hooks.Stop).toHaveLength(1);
   });
@@ -104,7 +104,8 @@ describe("init", () => {
   });
 
   it("wires every supported tool when asked", () => {
-    runCli(["--dir", repo, "--tools", "claude-code,opencode,codex,mistral-vibe,cursor", "--yes"]);
+    const { status, stderr } = runCli(["--dir", repo, "--tools", "claude-code,opencode,codex,mistral-vibe,cursor", "--yes"]);
+    expect(status, stderr).toBe(0);
 
     const codex = readFileSync(path.join(repo, ".codex/config.toml"), "utf8");
     expect(codex).toContain("[[hooks.PreToolUse]]");
@@ -125,6 +126,9 @@ describe("init", () => {
     expect(existsSync(path.join(repo, ".codex/skills"))).toBe(false);
     // Claude Code is the one host that still needs the link.
     expect(lstatSync(path.join(repo, ".claude/skills")).isSymbolicLink()).toBe(true);
+    // opencode's shim is a real file copied from templates: a path the generator names but does
+    // not ship makes init throw, and every assertion above still passes on the half-written tree.
+    expect(existsSync(path.join(repo, ".opencode/plugins/agentspine.js"))).toBe(true);
   });
 
   // TOML is spliced as text precisely so a user's comments and ordering survive.
@@ -224,8 +228,8 @@ describe("ci-review pack", () => {
     const { stdout } = runCli(["--dir", repo, "--yes", "--packs", "ci-review", "--tools", "claude-code"]);
     const workflow = readFileSync(path.join(repo, ".github/workflows/claude-code-review.yml"), "utf8");
     const { version } = JSON.parse(readFileSync(path.resolve("package.json"), "utf8"));
-    expect(workflow).toContain(`AGENT_INIT_VERSION: "${version}"`);
-    expect(workflow).not.toContain("__AGENT_INIT_VERSION__");
+    expect(workflow).toContain(`AGENTSPINE_VERSION: "${version}"`);
+    expect(workflow).not.toContain("__AGENTSPINE_VERSION__");
     expect(existsSync(path.join(repo, ".agents/skills/pr-ci-review/SKILL.md"))).toBe(true);
     expect(existsSync(path.join(repo, ".agents/skills/review-changes/SKILL.md"))).toBe(true);
     expect(existsSync(path.join(repo, ".agents/agents/review-security.md"))).toBe(true);

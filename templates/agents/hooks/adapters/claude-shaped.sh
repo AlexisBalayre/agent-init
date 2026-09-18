@@ -12,12 +12,12 @@ HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 POLICY="$HOOK_DIR/policies/$POLICY_NAME.sh"
 
 if [ ! -x "$POLICY" ]; then
-  printf 'agent-init: unknown policy %s\n' "$POLICY_NAME" >&2
+  printf 'agentspine: unknown policy %s\n' "$POLICY_NAME" >&2
   exit 0
 fi
 
 if ! command -v jq >/dev/null 2>&1; then
-  printf 'agent-init: jq is not installed, so hook policies cannot run. Install jq (brew install jq / apt-get install jq) or re-run agent-init with --skip-hooks.\n' >&2
+  printf 'agentspine: jq is not installed, so hook policies cannot run. Install jq (brew install jq / apt-get install jq) or re-run agentspine with --skip-hooks.\n' >&2
   exit 0
 fi
 
@@ -58,7 +58,7 @@ POLICY_STATUS=$?
 
 # Only 0 and 2 are meaningful. A policy that crashed must not block the session.
 if [ "$POLICY_STATUS" -ne 0 ] && [ "$POLICY_STATUS" -ne 2 ]; then
-  printf 'agent-init: policy %s exited %s; allowing.\n' "$POLICY_NAME" "$POLICY_STATUS" >&2
+  printf 'agentspine: policy %s exited %s; allowing.\n' "$POLICY_NAME" "$POLICY_STATUS" >&2
   exit 0
 fi
 exit "$POLICY_STATUS"

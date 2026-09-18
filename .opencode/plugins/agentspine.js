@@ -1,0 +1,1 @@
+../../templates/agents/plugins/opencode/agentspine.js

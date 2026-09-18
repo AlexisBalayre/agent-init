@@ -18,7 +18,7 @@ jobs:
       - run: npm test
       # This repository is scaffolded by its own tool: fail if the generator and the
       # committed tree have drifted apart. Content-compared, so the shared symlinks pass.
-      - run: node dist/cli.js --check --tools claude-code --packs thinking,engineering,planning,review
+      - run: node dist/cli.js --check --tools claude-code,opencode --packs thinking,engineering,planning,review
 
   shell:
     runs-on: ubuntu-latest

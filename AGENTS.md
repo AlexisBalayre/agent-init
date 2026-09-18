@@ -1,4 +1,4 @@
-# agent-init
+# agentspine
 
 A one-shot CLI that scaffolds a shared agent setup across Claude Code, Codex, opencode, Mistral
 Vibe, and Cursor.
@@ -36,7 +36,7 @@ constraint, a gotcha. Never narrate what the code does.
 
 Never commit to `main`. Branch per change, PRs only.
 
-<!-- agent-init:start -->
+<!-- agentspine:start -->
 ## Agent setup
 
 Shared instructions for every coding agent in this repository. Tool-specific layers point here
@@ -52,5 +52,5 @@ rather than repeating it.
 - Hook policies are shared shell scripts; each tool has a thin adapter in
   `.agents/hooks/adapters/`. The contract is `.agents/hooks/CONTRACT.md`.
 
-Managed by agent-init. Edit outside the markers, or edit `.agents/` directly.
-<!-- agent-init:end -->
+Managed by agentspine. Edit outside the markers, or edit `.agents/` directly.
+<!-- agentspine:end -->

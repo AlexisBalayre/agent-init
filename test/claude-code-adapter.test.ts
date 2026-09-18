@@ -10,7 +10,7 @@ const FIXTURES = path.resolve("test/fixtures/claude-code");
 /** Runs the adapter exactly as Claude Code does: payload on stdin, policy name as argv. */
 function runAdapter(fixture: string, policy: string) {
   const payload = readFileSync(path.join(FIXTURES, fixture), "utf8");
-  const projectDir = mkdtempSync(path.join(tmpdir(), "agent-init-"));
+  const projectDir = mkdtempSync(path.join(tmpdir(), "agentspine-"));
 
   const result = spawnSync("bash", [ADAPTER, policy], {
     input: payload,
@@ -25,7 +25,7 @@ describe("claude-code adapter -> git-safety", () => {
   it("blocks a force push with exit 2 and a reason on stderr", () => {
     const { status, stderr } = runAdapter("pre-tool-bash.force-push.json", "git-safety");
     expect(status).toBe(2);
-    expect(stderr).toContain("BLOCKED by agent-init git-safety");
+    expect(stderr).toContain("BLOCKED by agentspine git-safety");
   });
 
   it("allows an ordinary command", () => {
@@ -65,7 +65,7 @@ describe("adapter safety", () => {
  */
 describe("git-safety across worktrees", () => {
   function repoWithWorktree() {
-    const root = mkdtempSync(path.join(tmpdir(), "agent-init-wt-safety-"));
+    const root = mkdtempSync(path.join(tmpdir(), "agentspine-wt-safety-"));
     const git = (cwd: string, ...args: string[]) =>
       spawnSync("git", ["-c", "user.email=t@t", "-c", "user.name=t", ...args], { cwd, encoding: "utf8" });
     git(root, "init", "-q", "-b", "main");

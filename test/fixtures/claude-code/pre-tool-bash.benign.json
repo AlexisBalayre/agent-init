@@ -1,6 +1,6 @@
 {
   "session_id": "fixture",
-  "cwd": "/tmp/agent-init-fixture",
+  "cwd": "/tmp/agentspine-fixture",
   "hook_event_name": "PreToolUse",
   "tool_name": "Bash",
   "tool_input": { "command": "git status --short" }

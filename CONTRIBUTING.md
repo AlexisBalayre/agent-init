@@ -17,7 +17,7 @@ the rules below.
 That is deliberate: this repository is scaffolded by its own tool, so editing a skill while working
 here edits the shipped skill, and any breakage surfaces here before it reaches anyone else. Edit either path; they are the
 same bytes. What you must not do is add a file under `.agents/` that has no counterpart in
-`templates/`, because `agent-init --check` compares the committed tree against what the generator
+`templates/`, because `agentspine --check` compares the committed tree against what the generator
 would emit and will fail.
 
 `.github/workflows/claude-code-review.yml` is generated from
@@ -41,7 +41,7 @@ npm run build
 | :-- | :-- |
 | `npm test` | Golden files, adapter contract fixtures, the pure hook and review logic |
 | `npm run typecheck` / `build` | Types, and that `dist/` still compiles |
-| `agent-init --check` | The committed tree drifting from what the generator emits |
+| `agentspine --check` | The committed tree drifting from what the generator emits |
 | `shellcheck -s bash` | Every shell file we ship, targeting bash 3.2 |
 | `scripts/audit-templates.sh` | Employer, personal or originating-repo references in shipped content, and pointers to docs a scaffolded repo will not have |
 
@@ -65,6 +65,6 @@ request which decision you are revisiting and why; that file is the argument, no
 
 ## Reporting a bug
 
-Open an issue; the form asks for what it needs. `agent-init doctor --json` is worth attaching when
+Open an issue; the form asks for what it needs. `agentspine doctor --json` is worth attaching when
 the repository is already scaffolded, because it names each tool, whether the wiring is present, and
 whether a probe hook actually blocked.

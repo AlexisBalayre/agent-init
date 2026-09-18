@@ -1,6 +1,6 @@
 # opencode plugin
 
-Copied to `.opencode/plugins/agent-init.js`, which opencode loads at startup.
+Copied to `.opencode/plugins/agentspine.js`, which opencode loads at startup.
 
 opencode is the reason the hook contract has the shape it does: it has **no shell hooks**, so it
 brackets the difficulty against Claude Code's rich ones. A contract satisfying both generalises.

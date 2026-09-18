@@ -1,8 +1,8 @@
-# The CI half of the /pr-ci-review pipeline (.agents/skills/pr-ci-review), emitted by agent-init's
+# The CI half of the /pr-ci-review pipeline (.agents/skills/pr-ci-review), emitted by agentspine's
 # ci-review pack: a deterministic preflight resolves the head/mode, the model reviews and emits a
 # structured record, and a poster renders that record to the PR (the model itself has no write
 # channel). Each run's record is appended to the `ci/review-metrics` orphan branch for the
-# /review-retro skill to mine. The deterministic steps are `agent-init review <step>`, installed
+# /review-retro skill to mine. The deterministic steps are `agentspine review <step>`, installed
 # at the version that scaffolded this file; this repository needs no Node toolchain of its own.
 #
 # Claude Code only: the review runs through anthropics/claude-code-action.
@@ -26,9 +26,9 @@ on:
 
 env:
   NODE_VERSION: "22"
-  # The review tooling ships inside agent-init. Pinned, so the contract between this workflow,
+  # The review tooling ships inside agentspine. Pinned, so the contract between this workflow,
   # the pr-ci-review skill and the poster moves only when you re-scaffold.
-  AGENT_INIT_VERSION: "__AGENT_INIT_VERSION__"
+  AGENTSPINE_VERSION: "__AGENTSPINE_VERSION__"
   # Config the model executes at startup, restored from the base branch below so a PR cannot
   # rewrite the reviewer that reviews it. Add any path the shared tree resolves through: if
   # `.agents/skills` is a symlink into another directory, that directory belongs here too,
@@ -89,7 +89,7 @@ jobs:
 
       # --ignore-scripts: the install runs with this job's token in the environment.
       - name: Install review tooling
-        run: npm install --global --ignore-scripts "agent-init@${AGENT_INIT_VERSION}"
+        run: npm install --global --ignore-scripts "agentspine@${AGENTSPINE_VERSION}"
 
       # Land on the PR head, not the default refs/pull/N/merge ref that the
       # pull_request checkout leaves behind. Reviewers, inline-comment line
@@ -137,20 +137,20 @@ jobs:
           REVIEW_PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
           REVIEW_TRIGGER: ${{ github.event_name == 'issue_comment' && 'comment' || github.event.action }}
           REVIEW_FORCE_FULL: ${{ github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude review full') }}
-        run: agent-init review preflight
+        run: agentspine review preflight
 
       - name: Generate review schema
         if: steps.pr-head.outputs.skip != 'true' && steps.preflight.outputs.skip != 'true'
         id: gen-schema
         run: |
-          schema=$(agent-init review schema)
+          schema=$(agentspine review schema)
           # Escape single quotes so the schema embeds safely in the single-quoted
           # --json-schema token below, whatever its descriptions contain.
           schema=${schema//\'/\'\\\'\'}
           echo "schema=$schema" >> "$GITHUB_OUTPUT"
 
       # claude-code-action restores CLAUDE.md, .claude/ and .mcp.json itself, but not AGENTS.md
-      # (which CLAUDE.md imports) and not .agents/, where agent-init keeps what .claude/ only
+      # (which CLAUDE.md imports) and not .agents/, where agentspine keeps what .claude/ only
       # links to: the skills and reviewer agents this review runs, and the hook adapters
       # .claude/settings.json executes. Left alone, a PR could rewrite its own reviewer. Apply
       # the action's treatment to every RESTORE_PATHS entry: snapshot the head's copy for
@@ -268,7 +268,7 @@ jobs:
 
       # --ignore-scripts: the install runs with this job's token in the environment.
       - name: Install review tooling
-        run: npm install --global --ignore-scripts "agent-init@${AGENT_INIT_VERSION}"
+        run: npm install --global --ignore-scripts "agentspine@${AGENTSPINE_VERSION}"
 
       # The exact commit the review ran against, never whatever the head is now: a push landing
       # mid-review would otherwise shift every line number the findings point at. Absent (the
@@ -300,11 +300,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REVIEW_POSTED_OUTPUT: ${{ github.workspace }}/posted.json
         # Handed over both ways: the file is what a findings record needs, and the inline copy
-        # keeps an older pinned agent-init working, which would otherwise read no output at all
+        # keeps an older pinned agentspine working, which would otherwise read no output at all
         # and report a finished review as "not reviewed".
         run: |
           REVIEW_STRUCTURED_OUTPUT="$(cat "$REVIEW_STRUCTURED_OUTPUT_FILE" 2>/dev/null || true)" \
-            agent-init review post
+            agentspine review post
 
       - name: Emit review metrics
         if: always()
@@ -318,7 +318,7 @@ jobs:
           REVIEW_METRICS_OUTPUT: ${{ github.workspace }}/review-metrics.json
         run: |
           REVIEW_STRUCTURED_OUTPUT="$(cat "$REVIEW_STRUCTURED_OUTPUT_FILE" 2>/dev/null || true)" \
-            agent-init review metrics
+            agentspine review metrics
 
       - name: Upload review metrics
         if: always()

@@ -10,11 +10,11 @@ HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 POLICY="$HOOK_DIR/policies/$POLICY_NAME.sh"
 
 if [ ! -x "$POLICY" ]; then
-  printf 'agent-init: unknown policy %s\n' "$POLICY_NAME" >&2
+  printf 'agentspine: unknown policy %s\n' "$POLICY_NAME" >&2
   exit 0
 fi
 if ! command -v jq >/dev/null 2>&1; then
-  printf 'agent-init: jq is not installed, so hook policies cannot run.\n' >&2
+  printf 'agentspine: jq is not installed, so hook policies cannot run.\n' >&2
   exit 0
 fi
 
@@ -48,7 +48,7 @@ export AGENT_COMMAND="${AGENT_COMMAND:-}" AGENT_FILES="${AGENT_FILES:-}"
 POLICY_STATUS=$?
 
 if [ "$POLICY_STATUS" -ne 0 ] && [ "$POLICY_STATUS" -ne 2 ]; then
-  printf 'agent-init: policy %s exited %s; allowing.\n' "$POLICY_NAME" "$POLICY_STATUS" >&2
+  printf 'agentspine: policy %s exited %s; allowing.\n' "$POLICY_NAME" "$POLICY_STATUS" >&2
   exit 0
 fi
 exit "$POLICY_STATUS"
