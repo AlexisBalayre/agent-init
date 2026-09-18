@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-09-18T11:18:06.951Z",
+  "repository": "AlexisBalayre/agent-init",
+  "run_id": "35335801521",
+  "run_url": "https://github.com/AlexisBalayre/agent-init/actions/runs/35335801521",
+  "actor": "AlexisBalayre",
+  "commit_sha": "b93f90635be2a9e5a5700f9c1b8cf3a45d87a81b",
+  "source": "pr",
+  "pr_number": 20,
+  "action": "review",
+  "reviewers_spawned": [
+    "correctness",
+    "correctness",
+    "security",
+    "security",
+    "context",
+    "conventions",
+    "maintainability",
+    "maintainability",
+    "docs"
+  ],
+  "reviewers_skipped": [],
+  "review_mode": "full",
+  "incremental_from_sha": null,
+  "prior_importants": [],
+  "findings": [
+    {
+      "file": "templates/agents/plugins/opencode/agent-init.js",
+      "line": "16",
+      "area": "correctness",
+      "confidence": "high",
+      "tag": "important",
+      "description": "AGENT_CWD is set to process.cwd() of the opencode plugin host process, but the same function already computes a worktree-aware projectDir = worktree ?? directory ?? process.cwd() (line 29) and uses it for AGENT_PROJECT_DIR. In a session working in a git worktree while the host process's own cwd is elsewhere (e.g. the repo root) — the exact scenario this PR exists to fix — AGENT_CWD reports the wrong directory, and git-safety.sh's git -C \"${AGENT_CWD:-$PROJECT_DIR}\" branch --show-current reads the wrong branch, reintroducing on opencode the bug this PR fixes for Claude Code, Codex, Cursor, and Mistral Vibe. No test exercises the opencode adapter's AGENT_CWD wiring (the new worktree tests in test/claude-code-adapter.test.ts only cover claude-shaped.sh).",
+      "body": "The opencode adapter now exports `AGENT_CWD: process.cwd()`, but that is not the session's cwd in the case this PR exists to fix.\n\nA few lines below the change, the same file has:\n\n```js\nexport const AgentInit = async ({ directory, worktree }) => {\n  const projectDir = worktree ?? directory ?? process.cwd();\n```\n\nThat fallback chain exists because opencode's plugin host `process.cwd()` is not necessarily the session's working directory — opencode passes the worktree in as an explicit arg for exactly that reason.\n\nConcrete scenario: user launches `opencode` from `/repo`, then works in `/repo/.worktrees/feature`. Opencode invokes the plugin with `{ directory: '/repo', worktree: '/repo/.worktrees/feature' }`. `projectDir` correctly becomes the worktree, but `process.cwd()` inside the plugin remains `/repo`.\n\nWith the current change, the policy sees:\n- `AGENT_PROJECT_DIR = /repo/.worktrees/feature` (worktree, correct)\n- `AGENT_CWD = /repo` (root — wrong)\n\n`git-safety.sh` then does:\n\n```sh\nCURRENT_BRANCH=$(git -C \"${AGENT_CWD:-$PROJECT_DIR}\" branch --show-current 2>/dev/null || echo '')\n```\n\nIt uses `AGENT_CWD` (root) and reads the root's branch — the original bug, restored for opencode. The claude-shaped and cursor adapters get this right by pulling `.cwd` off the JSON payload; opencode's plugin has already made the same computation and stored it in `projectDir`, so the fix should reuse that: `AGENT_CWD: projectDir`.\n\nThis path has zero test coverage — the new worktree tests in `test/claude-code-adapter.test.ts` only exercise `claude-shaped.sh`.\n\nhttps://github.com/AlexisBalayre/agent-init/blob/b93f90635be2a9e5a5700f9c1b8cf3a45d87a81b/templates/agents/plugins/opencode/agent-init.js#L11-L29",
+      "suggestion": "    env: { ...process.env, ...env, AGENT_TOOL: \"opencode\", AGENT_PROJECT_DIR: projectDir, AGENT_CWD: projectDir },"
+    },
+    {
+      "file": "templates/agents/hooks/CONTRACT.md",
+      "line": "25",
+      "area": "conventions",
+      "confidence": "high",
+      "tag": "important",
+      "description": "The new AGENT_CWD row reads as a uniform guarantee across every adapter (\"the session's working directory, which in a git worktree is not the repository root\"), but templates/agents/hooks/adapters/mistral-vibe.sh sets AGENT_CWD=\"$AGENT_PROJECT_DIR\" unconditionally, with no independent lookup — the two variables are structurally identical on every Vibe invocation, so this property can never hold there. git-safety.sh's worktree fix (git -C \"${AGENT_CWD:-$PROJECT_DIR}\" branch --show-current) is therefore a verified no-op on Mistral Vibe. This is exactly the silent cross-host degradation AGENTS.md's own rule forbids (\"Never claim parity a tool does not have... Silent degradation is the failure mode this project exists to avoid\"), and CONTRACT.md itself has existing precedent for disclosing per-host behavioral differences in prose that wasn't applied to this row.",
+      "body": "CONTRACT.md line 25 (https://github.com/AlexisBalayre/agent-init/blob/b93f90635be2a9e5a5700f9c1b8cf3a45d87a81b/templates/agents/hooks/CONTRACT.md#L25):\n```\n| `AGENT_CWD` | the session's working directory, which in a git worktree is not the repository root; falls back to `AGENT_PROJECT_DIR` |\n```\n\nmistral-vibe.sh lines 45-49 (https://github.com/AlexisBalayre/agent-init/blob/b93f90635be2a9e5a5700f9c1b8cf3a45d87a81b/templates/agents/hooks/adapters/mistral-vibe.sh#L45-L49):\n```\nAGENT_PROJECT_DIR=$(printf '%s' \"$INPUT\" | jq -r '.cwd // empty')\n[ -n \"$AGENT_PROJECT_DIR\" ] || AGENT_PROJECT_DIR=$(pwd)\nAGENT_CWD=\"$AGENT_PROJECT_DIR\"\n```\n\n`AGENT_CWD` is a bare alias of `AGENT_PROJECT_DIR` here, not a fallback — there is no branch where it could diverge, so the row's claim that AGENT_CWD \"in a git worktree is not the repository root\" is unconditionally false for this adapter. `git-safety.sh`'s hook fires on every command via this adapter's `pre_tool` wiring, so the gap is live, not hypothetical: a Vibe user working from a worktree while the root sits on trunk gets exactly the pre-fix behavior this PR set out to eliminate. Neither `docs/capability-matrix.md` nor `docs/design/0001-architecture.md` documents this gap.\n\nAGENTS.md: \"Never claim parity a tool does not have. A capability gap is documented in the matrix, not emulated. Silent degradation is the failure mode this project exists to avoid.\"",
+      "suggestion": "| `AGENT_CWD` | the session's working directory where the host distinguishes it from the project directory; on Mistral Vibe it is always identical to `AGENT_PROJECT_DIR` (no independent lookup). Falls back to `AGENT_PROJECT_DIR` when unset. |"
+    },
+    {
+      "file": "test/build.test.ts",
+      "line": "6-11",
+      "area": "docs",
+      "confidence": "high",
+      "tag": "important",
+      "description": "The new file-level docstring states as established fact that \"A real publish of 0.1.0 carried a compiled file that existed only on an unmerged branch.\" This is the exact claim the PR description retracts (\"I first justified this by claiming 0.1.0's tarball carried a stale file. It did not — every file in it traces to main. The hazard is real, the evidence I gave for it was wrong\") — retracted in the same commit that introduced the docstring, but the code was never updated to match.",
+      "body": "The docstring above `describe(\"build\", ...)` reads:\n\n> `tsc` never removes outputs whose source is gone, so `dist/` accumulates whatever any branch\n> ever compiled, and `npm publish` ships the directory as it finds it. A real publish of 0.1.0\n> carried a compiled file that existed only on an unmerged branch. The build clears `dist/` first\n> for that reason, and this asserts it still does.\n\nThe PR's own description retracts this exact claim: \"I first justified this by claiming 0.1.0's tarball carried a stale file. It did not — every file in it traces to `main`. The hazard is real, the evidence I gave for it was wrong.\" The retraction is in the commit message of the same commit (84d5f27) that added this docstring, so it isn't a stale claim from an earlier revision — the code simply was never reconciled with the author's own correction, and it now ships a claim the author has already stated is false into a test file future maintainers will treat as the authoritative record of why the test exists.\n\nhttps://github.com/AlexisBalayre/agent-init/blob/b93f90635be2a9e5a5700f9c1b8cf3a45d87a81b/test/build.test.ts#L6-L11",
+      "suggestion": "/**\n * `tsc` never removes outputs whose source is gone, so `dist/` accumulates whatever any branch\n * ever compiled, and `npm publish` ships the directory as it finds it: a stale compiled file\n * could ship in a release without ever being caught. The build clears `dist/` first to close\n * that hazard, and this asserts it still does.\n */"
+    },
+    {
+      "file": "templates/agents/hooks/policies/git-safety.sh",
+      "line": "41-44",
+      "area": "maintainability",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The new three-line comment above CURRENT_BRANCH= restates CONTRACT.md's AGENT_CWD row explanation in different prose, with nothing tying the two together, so they can drift independently. Mitigated somewhat by the file's existing top-level '# Contract: ../CONTRACT.md' pointer, and the comment does add policy-specific rationale beyond the contract row, but the duplication risk is real.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "templates/agents/hooks/adapters/claude-shaped.sh",
+      "line": "50-51",
+      "area": "maintainability",
+      "confidence": "high",
+      "tag": "nit",
+      "description": "claude-shaped.sh and cursor.sh both add the identical two-line AGENT_CWD extraction (jq -r '.cwd // empty' plus the [ -n ... ] fallback to AGENT_PROJECT_DIR), verified byte-for-byte identical in the diff. Tolerable at two call sites under this project's near-zero-dependency rule, but a third near-identical copy would be the point a shared helper becomes worth it.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "templates/agents/hooks/adapters/mistral-vibe.sh",
+      "line": "47",
+      "area": "maintainability",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "claude-shaped.sh and cursor.sh populate AGENT_CWD via an independent jq read with an explicit fallback; mistral-vibe.sh instead does a bare AGENT_CWD=\"$AGENT_PROJECT_DIR\" with no ${:-}/[ -n ] guard. Functionally correct today since AGENT_PROJECT_DIR is already sourced from the same .cwd field, but the shape inconsistency across three adapters implementing the same contract variable via two different idioms, with no comment marking the alias as deliberate, invites a future contributor to miswrite a fourth adapter or 'fix' this one by adding a redundant lookup.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "package.json",
+      "line": "43",
+      "area": "maintainability",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The new clean script embeds actual JS logic as an inline node -e string, where every other script in this file is a single external-tool invocation. The repo already has a scripts/ directory for standalone logic (scripts/audit-templates.sh, scripts/render-review-workflow.mjs) that a scripts/clean.mjs could follow at zero new dependency cost, gaining syntax highlighting and lint coverage.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "test/build.test.ts",
+      "line": "13-24",
+      "area": "maintainability",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The planted stale file (dist/review/gone-from-src.js) is written directly into this repo's real, shared dist/ with no try/finally cleanup. Traced through the actual failure paths, ordinary build/assertion failures don't leave it behind (clean always runs first and can't itself fail), but if spawnSync(\"npm\", ...) fails to spawn at all (e.g. npm unavailable on PATH), clean never runs and the planted file — inside the directory package.json's files field ships to npm — is left on disk until the next successful build. Narrow, but a try/finally would close it at negligible cost.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "test/build.test.ts",
+      "line": "18",
+      "area": "correctness",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "Two minor fragility points in the new build test: spawnSync(\"npm\", [\"run\", \"build\"], ...) can fail with ENOENT on Windows without shell: true (CI is ubuntu-latest so the pipeline is unaffected, but a local Windows `npm test` would hit this despite the PR's cross-platform framing for the clean step); and the test relies on vitest's default 5000ms timeout for a full npm run build (node clean + tsc), which is tight on a slow or loaded runner and could produce a spurious failure unrelated to the property under test.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "test/build.test.ts",
+      "line": "22",
+      "area": "docs",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The inline comment '// The real outputs are still there: this is a clean build, not a broken one.' sits above a self-explanatory assertion and doesn't add an invariant, unit, or gotcha beyond what the it() title and the preceding docstring already convey — it restates intent rather than explaining something non-obvious.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "docs/design/0001-architecture.md",
+      "line": "48-50",
+      "area": "conventions",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "Decision 4 enumerates the adapter's exported contract as AGENT_EVENT, AGENT_TOOL, AGENT_COMMAND, AGENT_FILES, AGENT_PROJECT_DIR. This PR adds a sixth contract variable, AGENT_CWD, to CONTRACT.md and every adapter, but doesn't update this list or add a dated addendum, unlike prior contract-affecting changes in this same file (e.g. decisions 20 and 24's addenda). Guidance-grade (not a MUST/NEVER rule), so capped at nit, but it leaves the ADR's own enumerated list stale.",
+      "body": null,
+      "suggestion": null
+    }
+  ],
+  "refuted_findings": [],
+  "process_issues": [],
+  "comments_posted_actual": 3,
+  "is_error": false,
+  "cost_usd": 6.955073799999999,
+  "duration_ms": 913464,
+  "num_turns": 38,
+  "tokens": {
+    "input": 39,
+    "output": 55203,
+    "cache_read": 1085695,
+    "cache_creation": 116803,
+    "total": 1257740
+  }
+}
