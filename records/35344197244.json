@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-09-18T12:34:42.745Z",
+  "repository": "AlexisBalayre/agentspine",
+  "run_id": "35344197244",
+  "run_url": "https://github.com/AlexisBalayre/agentspine/actions/runs/35344197244",
+  "actor": "AlexisBalayre",
+  "commit_sha": "e21318f1730fbe7d745e08796857ce56c99d4c76",
+  "source": "pr",
+  "pr_number": 22,
+  "action": "review",
+  "reviewers_spawned": [
+    "correctness",
+    "security",
+    "conventions",
+    "maintainability"
+  ],
+  "reviewers_skipped": [
+    "context",
+    "docs"
+  ],
+  "review_mode": "full",
+  "incremental_from_sha": null,
+  "prior_importants": [],
+  "findings": [
+    {
+      "file": "templates/agents/hooks/policies/git-safety.sh",
+      "line": "47-62",
+      "area": "security",
+      "confidence": "high",
+      "tag": "important",
+      "description": "is_tag_push() greps the raw $COMMAND string for tag-exemption substrings anywhere in the text, so quoted argument content (a commit message, a push-option value) is treated as authorization. git commit -m \"document the git push --tags workflow\" and git push -o \"note: git push --tags\" both slip past the trunk guard on trunk, where before this PR they were unconditionally blocked.",
+      "body": "`is_tag_push()` decides whether to exempt a `git commit`/`git push` from the trunk-protection block by grepping the *entire raw* `$COMMAND` string for the substrings `git push`, then `--tags`/`--follow-tags`/`refs/tags/` — with no check that those substrings are the actual command verb/flags rather than bytes sitting inside a quoted argument. The adapter preserves quotes as literal bytes in `$COMMAND`, so a quoted commit message or push-option value is indistinguishable from a real invocation to these greps.\n\nTwo confirmed bypasses on trunk (hand-traced against the head-SHA file and independently validated):\n\n1. `git commit -m \"document the git push --tags workflow\"` — outer guard matches `git commit`; `is_tag_push` finds `git push` and `--tags` inside the quoted message, returns true, block skipped. Before this PR (merge-base `25419183e839230e1e1c4bb0b72ea49349cc21d7`), the same command was unconditionally blocked on trunk — this is a regression this PR introduces.\n2. `git push -o \"note: git push --tags\"` — outer guard matches the real `git push`; `is_tag_push` matches `--tags` inside the quoted `-o` value, returns true, block skipped. `-o`/`--push-option` needs no refspec; with none given, `git push` pushes the current branch (trunk) to its tracked upstream by default. The file's separate \"direct push to $TRUNK\" rule requires a literal whitespace-bounded `main` token, absent here too.\n\nBoth commands are plausible for an agent to emit verbatim — narrating the release workflow in a commit message, or attaching a push-option note — with no adversarial intent required. A real commit or push to trunk slips past the hook the PR's own description calls \"the hook guarding every git command on five hosts.\"\n\nhttps://github.com/AlexisBalayre/agentspine/blob/e21318f1730fbe7d745e08796857ce56c99d4c76/templates/agents/hooks/policies/git-safety.sh#L47-L62",
+      "suggestion": null
+    },
+    {
+      "file": "templates/agents/hooks/policies/git-safety.sh",
+      "line": "49-66",
+      "area": "security",
+      "confidence": "high",
+      "tag": "important",
+      "description": "is_tag_push()'s tag-resolution loop exempts a command as soon as any word resolves to a real tag, without checking the rest of the command. git push origin v9.9.9 HEAD:main on trunk (v9.9.9 an existing tag) both passes the exemption and evades the file's separate direct-push-to-trunk rule, which requires a whitespace-bounded main token and misses the colon-joined HEAD:main form — this actually pushes HEAD to origin/main.",
+      "body": "`is_tag_push()`'s tag-resolution loop grants the exemption as soon as *any* whitespace-delimited word in the command resolves to a real, existing tag — it never checks what the rest of the command does. A push naming a real tag alongside a refspec that moves trunk therefore both passes the exemption and evades the file's separate, independent \"direct push to $TRUNK\" rule, which only matches a literal *whitespace*-bounded `main` token and misses the colon-joined form:\n\n```\ngit push origin v9.9.9 HEAD:main\n```\n\nrun on trunk with `v9.9.9` an existing tag: `is_tag_push`'s word loop resolves `v9.9.9` and returns true, so the main trunk guard is skipped; the \"direct push to $TRUNK\" regex (`...[[:space:]]main([[:space:]]|$)`) doesn't match `HEAD:main` because `main` is preceded by `:`, not whitespace. `git push <remote> <refspec1> <refspec2>` is valid git syntax — both the tag push and the `HEAD:main` refspec execute, pushing the current HEAD directly to `refs/heads/main` on `origin`. Before this PR the main trunk guard unconditionally blocked any push from trunk, which is what kept this refspec gap in the second rule from ever being reached; the new exemption unmasks it.\n\nThis is the more severe of the two bypasses in this review: it doesn't just let a local commit through, it publishes trunk to the remote — the exact outcome the hook exists to prevent — disguised as an ordinary release-tag push.\n\nhttps://github.com/AlexisBalayre/agentspine/blob/e21318f1730fbe7d745e08796857ce56c99d4c76/templates/agents/hooks/policies/git-safety.sh#L49-L66",
+      "suggestion": null
+    },
+    {
+      "file": "templates/agents/hooks/policies/git-safety.sh",
+      "line": "52-54",
+      "area": "correctness",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The `for word in $COMMAND` loop in `is_tag_push()` (lines 52-54) is unquoted, so it undergoes both IFS word-splitting and pathname (glob) expansion against the hook's working directory. A command containing a glob character (`*`, `?`, `[...]`) can have a token expand to a filename before it's checked against real tags; if that filename happens to match an existing tag name, the exemption fires on a command that was never shaped like a tag push. Narrow precondition (needs a matching filename in cwd), but worth a `set -f` around the loop or an equivalent glob-safe tokenization.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "test/claude-code-adapter.test.ts",
+      "line": "107-151",
+      "area": "correctness",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The new `describe(\"git-safety and release tags\")` block only exercises unquoted single-word refspec arguments (`git push origin v9.9.9`, `--tags`, `refs/tags/v9.9.9`, and their negatives). It never asserts the substring-in-quoted-value cases this review's important findings concern — e.g. `git commit -m \"...git push --tags...\"` or `git push -o \"...--tags...\"` staying blocked on trunk — so the regression shipped without a failing test, and a regressed fix wouldn't be caught either.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "test/claude-code-adapter.test.ts",
+      "line": "80, 124-134",
+      "area": "maintainability",
+      "confidence": "high",
+      "tag": "nit",
+      "description": "`runFromCwd` (line 80) gained an optional third `command` parameter specifically so a push command could be exercised through it, but no call site in the file ever passes one — the new `describe(\"git-safety and release tags\")` block instead defines its own `run(root, command)` (lines 124-134) that reconstructs the identical `spawnSync` payload from scratch. Either call `runFromCwd(root, root, command)` from the new tests and drop `run`, or the parameter added to `runFromCwd` is unused dead weight.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "test/claude-code-adapter.test.ts",
+      "line": "112-122",
+      "area": "maintainability",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "`taggedRepo()` (lines 112-122) duplicates the mkdtempSync + scoped `git -c user.email=... -c user.name=...` + init/write/add/commit boilerplate of the pre-existing `repoWithWorktree()` (lines 67-78) almost verbatim, differing only in the tmp-dir prefix and the final step (worktree vs. `git tag`). Worth factoring the shared bootstrap into one helper both describe blocks build on.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "templates/agents/hooks/CONTRACT.md",
+      "line": "44-50",
+      "area": "conventions",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "CONTRACT.md's \"Known limitation: literal matching\" section (lines 44-50) documents only the over-blocking direction of this file's raw-text matching (a command that merely contains a dangerous pattern as data gets blocked as a false positive) — every use of the pattern in the file gated a `block()` call when that section was written. This PR adds the same raw-substring-matching style to gate an allow decision instead (`is_tag_push()`), a different risk shape (under-blocking) the section doesn't mention. Not required to update on every change, but this is the section that exists specifically to disclose this file's matching trade-offs.",
+      "body": null,
+      "suggestion": null
+    }
+  ],
+  "refuted_findings": [
+    {
+      "file": "docs/design/0001-architecture.md",
+      "line": "61-65",
+      "area": "conventions",
+      "confidence": "medium",
+      "tag": "important",
+      "description": "is_tag_push() relitigates ADR decision 4 ('false positives are preferred to bypasses') without recording why, per AGENTS.md's 'do not relitigate a decision without recording why' rule.",
+      "refutation": "The quoted text attributed to 'docs/design/0001-architecture.md lines 61-65, decision 4' does not exist there. Decision 4 in that file (lines 46-54) is 'Hook adapters: three normalised events' — about the AGENT_EVENT/AGENT_COMMAND contract, unrelated to false positives or bypasses (verified by reading the file directly). The quoted 'false positives... bypass' text is actually from templates/agents/hooks/CONTRACT.md lines 44-50 ('Known limitation: literal matching'), which the same reviewer separately and correctly cited in an unrelated nit finding. AGENTS.md's 'do not relitigate' rule governs the ADR's nine decisions specifically, not CONTRACT.md's known-limitations section, so the cited rule doesn't apply to the cited text. The underlying concern (this PR extends raw-substring matching to an allow-path, which CONTRACT.md's literal-matching section doesn't yet disclose) is real and already captured as the correctly-cited CONTRACT.md nit finding."
+    }
+  ],
+  "process_issues": [
+    {
+      "component": "platform",
+      "description": "This CI run's config-restore mechanism (workflow env RESTORE_PATHS='AGENTS.md .agents templates') is documented to snapshot every RESTORE_PATHS entry to .claude-pr/<path> before reverting the in-tree copy to the base branch's version. In this run, .claude-pr/ only contained .claude/settings.json and CLAUDE.md — templates/ (which this PR modifies, including the file under review) was never snapshotted. The orchestrator and all four reviewers had to fall back to `git show <sha>:<path>` / `git diff <merge_base>..<head> -- <path>` instead, which worked, but the documented .claude-pr/ fallback silently didn't cover the path this PR actually touches."
+    }
+  ],
+  "comments_posted_actual": 2,
+  "is_error": false,
+  "cost_usd": 4.351091550000002,
+  "duration_ms": 738870,
+  "num_turns": 32,
+  "tokens": {
+    "input": 35,
+    "output": 55313,
+    "cache_read": 1118620,
+    "cache_creation": 113506,
+    "total": 1287474
+  }
+}
