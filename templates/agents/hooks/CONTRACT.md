@@ -22,6 +22,7 @@ Exactly three. A host event with no counterpart here is not ported.
 | `AGENT_COMMAND` | the shell command about to run (`pre-tool:bash` only) |
 | `AGENT_FILES` | newline-separated paths (`post-edit` only) |
 | `AGENT_PROJECT_DIR` | repository root |
+| `AGENT_CWD` | the session's working directory, which in a git worktree is not the repository root; falls back to `AGENT_PROJECT_DIR` |
 
 ## Exit codes
 

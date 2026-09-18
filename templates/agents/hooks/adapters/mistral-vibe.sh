@@ -44,8 +44,9 @@ esac
 
 AGENT_PROJECT_DIR=$(printf '%s' "$INPUT" | jq -r '.cwd // empty')
 [ -n "$AGENT_PROJECT_DIR" ] || AGENT_PROJECT_DIR=$(pwd)
+AGENT_CWD="$AGENT_PROJECT_DIR"
 
-export AGENT_EVENT AGENT_TOOL="mistral-vibe" AGENT_PROJECT_DIR
+export AGENT_EVENT AGENT_TOOL="mistral-vibe" AGENT_PROJECT_DIR AGENT_CWD
 export AGENT_COMMAND="${AGENT_COMMAND:-}" AGENT_FILES="${AGENT_FILES:-}"
 
 POLICY_STDERR=$("$POLICY" 2>&1 1>/dev/null)

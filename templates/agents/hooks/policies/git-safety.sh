@@ -38,7 +38,10 @@ if printf '%s' "$COMMAND" | grep -qE "git[[:space:]]+$HARD_RESET"; then
   block 'a hard reset discards work. Revert, or branch instead.'
 fi
 
-CURRENT_BRANCH=$(git -C "$PROJECT_DIR" branch --show-current 2>/dev/null || echo '')
+# The session's directory, not the repository root: with a git worktree they are different
+# checkouts on different branches, and the branch that matters is the one being worked in. Reading
+# the root's branch instead blocks every commit made from a worktree while the root sits on trunk.
+CURRENT_BRANCH=$(git -C "${AGENT_CWD:-$PROJECT_DIR}" branch --show-current 2>/dev/null || echo '')
 [ -n "$CURRENT_BRANCH" ] || exit 0
 
 if [ "$CURRENT_BRANCH" = "$TRUNK" ] \
