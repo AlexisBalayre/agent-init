@@ -502,14 +502,14 @@ anyone. A documented gap beats an undocumented guarantee whose failure is silent
 Date: 2026-09-18
 
 `npx agent-init` now resolves. The version matters beyond convenience: decision 21 emits a workflow
-that installs `agent-init@<version>` to run its own review tooling, so until something was published
-that pack shipped a red step. The pin is written at scaffold time, which makes the CI contract
+that installs `agent-init@<version>` to run its own review tooling, so until agent-init was
+published, that pack shipped a red step. The pin is written at scaffold time, which makes the CI contract
 between the workflow, the `pr-ci-review` skill and the poster immovable until someone re-scaffolds.
 
 Published as `0.1.0` rather than `1.0.0`: the flag set is a public API from here (decision 10), the
-CI record's `schema_version` is its own contract, and four of the five tools are still wired from
-their documentation rather than from a run anyone has watched (the matrix says which). `0.1.0` says
-that honestly.
+CI record's `schema_version` is its own contract, and three of the five tools are still wired from
+their documentation rather than from a run anyone has watched (Codex, opencode and Cursor; the
+matrix names them). `0.1.0` says that honestly.
 
 **Verified before publishing**, from the packed tarball installed into a throwaway prefix rather
 than from the working tree: 95 files including `dist/`, every template, the seven reviewer agents
