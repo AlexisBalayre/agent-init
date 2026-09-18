@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-09-18T10:07:22.696Z",
+  "repository": "AlexisBalayre/agent-init",
+  "run_id": "35332192129",
+  "run_url": "https://github.com/AlexisBalayre/agent-init/actions/runs/35332192129",
+  "actor": "AlexisBalayre",
+  "commit_sha": "8858ec302cb37229b3cbad8e535f534afaf6dab2",
+  "source": "pr",
+  "pr_number": 18,
+  "action": "review",
+  "reviewers_spawned": [
+    "conventions",
+    "docs"
+  ],
+  "reviewers_skipped": [
+    "correctness",
+    "security",
+    "context",
+    "maintainability"
+  ],
+  "review_mode": "incremental",
+  "incremental_from_sha": "d9e81dceceeae5e9f3e5e475a564cd406cb89a10",
+  "prior_importants": [],
+  "findings": [
+    {
+      "file": "CONTRIBUTING.md",
+      "line": "55-60",
+      "area": "conventions",
+      "confidence": "high",
+      "tag": "important",
+      "description": "CONTRIBUTING.md's new \"House rules\" section claims AGENTS.md doesn't say two things, but AGENTS.md's \"Rules specific to this repo\" section already states the second one near-verbatim (\"Facts about the five tools come from their docs, with the source recorded in the matrix\"), so the count should be \"one thing\" and this bullet reintroduces the exact cross-file duplication this same edit set out to remove.",
+      "body": "This commit collapsed CONTRIBUTING.md's old \"House rules worth knowing before you write code\" section — which near-verbatim duplicated AGENTS.md's rules — into a one-line pointer to AGENTS.md, fixing a duplication nit from the prior review round. But the \"Two things it does not say\" list that follows the pointer reintroduces the problem for one of its two bullets: AGENTS.md's \"Rules specific to this repo\" section already states \"**Facts about the five tools come from their docs**, with the source recorded in the matrix.\" CONTRIBUTING.md's version (\"with the source and date recorded in the matrix. Where the docs are silent, read the tool's source and cite file and line.\") is the same rule with two extra details, not a rule AGENTS.md omits. Only the sibling bullet (\"A guard nobody has seen fail is not yet a guard\") is genuinely absent from AGENTS.md, so the framing should say \"One thing,\" not \"Two things.\" As written, CONTRIBUTING.md asserts something false about what AGENTS.md contains, and leaves the same rule maintained in two places with no cross-reference — the drift risk this project's own \"one copy of everything\" principle exists to avoid.\n\n<https://github.com/AlexisBalayre/agent-init/blob/8858ec302cb37229b3cbad8e535f534afaf6dab2/CONTRIBUTING.md#L55-L60>",
+      "suggestion": "One thing it does not say, because it is about reviewing rather than writing:\n\n- **A guard nobody has seen fail is not yet a guard.** If you add a check, break the thing it\n  protects, watch it fail, then say so in the pull request."
+    },
+    {
+      "file": "README.md",
+      "line": "176",
+      "area": "docs",
+      "confidence": "high",
+      "tag": "pre-existing",
+      "description": "README.md still says doctor's \"output is the bug-report format\" (line 176), but this same commit softened that identical claim at the other two sites — CONTRIBUTING.md's \"Reporting a bug\" section now says doctor output is merely \"worth attaching,\" and bug_report.yml's intro now says \"the other fields still need you\" — leaving README as the one place still implying doctor output alone is a complete bug report.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "CONTRIBUTING.md",
+      "line": "59-60",
+      "area": "docs",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The new bullet references \"the matrix\" but the sibling bullet that used to introduce that term (the old \"Never claim parity...\" bullet, linked to docs/capability-matrix.md) was removed in this same edit, so a reader arriving at this section cold has no idea what \"the matrix\" refers to.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "CONTRIBUTING.md",
+      "line": "18",
+      "area": "docs",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "Line 18 now reads \"editing a skill while working here edits the shipped skill, and any breakage lands here first,\" using \"here\" twice for two different senses (the repo, and figuratively \"surfaces in this project before affecting users\"), which reads muddier than the original \"lands on us first\" that named the affected party.",
+      "body": null,
+      "suggestion": null
+    }
+  ],
+  "refuted_findings": [],
+  "process_issues": [],
+  "comments_posted_actual": 1,
+  "is_error": false,
+  "cost_usd": 1.9038170500000002,
+  "duration_ms": 550364,
+  "num_turns": 19,
+  "tokens": {
+    "input": 21,
+    "output": 21018,
+    "cache_read": 479062,
+    "cache_creation": 52514,
+    "total": 552615
+  }
+}
