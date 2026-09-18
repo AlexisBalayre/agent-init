@@ -44,8 +44,20 @@ fi
 CURRENT_BRANCH=$(git -C "${AGENT_CWD:-$PROJECT_DIR}" branch --show-current 2>/dev/null || echo '')
 [ -n "$CURRENT_BRANCH" ] || exit 0
 
+# Pushing a tag from the trunk is how releases are cut: it publishes a ref that points at
+# trunk, it does not move trunk. Only a push that carries no tag falls under the rule below.
+is_tag_push() {
+  printf '%s' "$COMMAND" | grep -qE 'git[[:space:]]+push' || return 1
+  printf '%s' "$COMMAND" | grep -qE -- '--tags|--follow-tags|refs/tags/' && return 0
+  for word in $COMMAND; do
+    git -C "${AGENT_CWD:-$PROJECT_DIR}" rev-parse --verify --quiet "refs/tags/$word" >/dev/null 2>&1 && return 0
+  done
+  return 1
+}
+
 if [ "$CURRENT_BRANCH" = "$TRUNK" ] \
-  && printf '%s' "$COMMAND" | grep -qE 'git[[:space:]]+(commit|push)([[:space:]]|$)'; then
+  && printf '%s' "$COMMAND" | grep -qE 'git[[:space:]]+(commit|push)([[:space:]]|$)' \
+  && ! is_tag_push; then
   block "you are on $TRUNK. Branch first; this project works on branches only."
 fi
 
