@@ -13,7 +13,7 @@ function runPolicy(policyName, env, projectDir) {
   if (!existsSync(policy)) return { blocked: false };
 
   const result = spawnSync("bash", [policy], {
-    env: { ...process.env, ...env, AGENT_TOOL: "opencode", AGENT_PROJECT_DIR: projectDir },
+    env: { ...process.env, ...env, AGENT_TOOL: "opencode", AGENT_PROJECT_DIR: projectDir, AGENT_CWD: process.cwd() },
     encoding: "utf8",
   });
 
