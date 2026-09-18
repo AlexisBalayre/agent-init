@@ -14,7 +14,7 @@ cycle as unverified, and re-run `agent-init doctor` after upgrading a tool.
 | **opencode** | `AGENTS.md` native | `.agents/skills/`, `.claude/skills/`, `.opencode/skills/` — all native | JS plugins only, `.opencode/plugins/` | `.opencode/agent/*.md` |
 | **Codex** | `AGENTS.md` native | `.agents/skills/` native, scanned CWD -> repo root; also `.codex/skills/` | `.codex/hooks.json`, or `[hooks]` in `.codex/config.toml` | `[agents]` in `config.toml` |
 | **Mistral Vibe** | `AGENTS.md` native | `.agents/skills/`, `.vibe/skills/`, plus `skill_paths` | `.vibe/hooks.toml` | `~/.vibe/agents/*.toml` (user-global) |
-| **Cursor** | `AGENTS.md` native, plus `.cursor/rules/*.mdc` | `.cursor/skills/` | `.cursor/hooks.json` | subagents (2026) |
+| **Cursor** | `AGENTS.md` native, plus `.cursor/rules/*.mdc` | `.agents/skills/` native, plus `.cursor/skills/`, and `.claude/skills/` for compatibility | `.cursor/hooks.json` | subagents (2026) |
 
 ## Hook interfaces
 
@@ -41,9 +41,10 @@ Two consequences the design absorbs:
 1. **`SKILL.md` is a de facto standard.** All five follow the Anthropic Agent Skills spec: `name`
    and `description` frontmatter, unknown fields ignored. Shipped skills need no format
    translation — only placement.
-2. **`.agents/skills/` is already a neutral cross-tool convention.** Codex, opencode and Mistral
-   Vibe all read it natively, without configuration — three of the five. Only Claude Code and
-   Cursor need the symlink.
+2. **`.agents/skills/` is already a neutral cross-tool convention.** Codex, opencode, Mistral Vibe
+   and Cursor all read it natively, without configuration — four of the five. Only Claude Code
+   needs the symlink. Cursor documents it as a project-level path alongside `.cursor/skills/`
+   (read 2026-09-18); it was on the symlink side until then.
 
 Neither holds for agents. See decision 8 in [`design/0001-architecture.md`](design/0001-architecture.md).
 
@@ -55,7 +56,7 @@ Neither holds for agents. See decision 8 in [`design/0001-architecture.md`](desi
 | **opencode** | native | nothing: native | JS plugin shim | symlink (v0.3) |
 | **Codex** | native | nothing: native | managed block in `config.toml` | none |
 | **Mistral Vibe** | native | nothing: native | managed block in `hooks.toml` | none |
-| **Cursor** | native | symlink | `hooks.json`, deep-merged | symlink (v0.3) |
+| **Cursor** | native | nothing: native | `hooks.json`, deep-merged | symlink (v0.3) |
 
 ## Skill invocation control
 

@@ -519,3 +519,29 @@ fresh repository with all five packs, `doctor` reporting the git-safety hook act
 probe, `--check` clean on what had just been written, `agent-init review schema` emitting parseable
 JSON Schema, and `.agents/scripts/worktree-create.sh` creating a worktree. A package that installs
 but cannot scaffold would have been invisible to the test suite, which runs from source.
+
+## 24. Windows, and one fewer symlink
+
+Date: 2026-09-18
+
+Two changes to how the shared tree reaches a tool, from opposite directions.
+
+**The symlink fallback decision 3 promised.** That decision accepted Windows as the cost of
+symlinks and said detection and a fallback were required, with `doctor` catching a bad setup.
+Neither was built: on a host that refuses `symlinkSync`, `init` threw, and a tool reading through
+that path found nothing. The link now falls back to copying the shared tree and the outcome says
+which one you got; `--check` treats a faithful copy as equal to the link, since the drift gate
+would otherwise fail forever on exactly the machines that needed the fallback, while a copy whose
+content differs is still drift. `doctor` gains a per-tool skills check, because a path resolving to
+nothing is invisible from the tool's side: it loads no skills and says nothing. Verified by forcing
+`symlinkSync` to throw `EPERM` the way Windows does.
+
+**Cursor no longer needs a link.** Its docs now list `.agents/skills/` as a project-level path
+alongside `.cursor/skills/` (read 2026-09-18, recorded in the matrix), so `.cursor/skills` is no
+longer emitted and Cursor joins Codex, opencode and Vibe on the native side: four of five. Nothing
+documents how Cursor treats one skill reachable through two roots, and not emitting the link means
+never finding out.
+
+- **Cost accepted:** the copy fallback is a second real copy of the shared tree on Windows, which
+  is the drift this project exists to prevent. It is the lesser failure: drift is visible in a diff,
+  where a skill that silently never loads is not.
