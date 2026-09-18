@@ -1,6 +1,6 @@
 {
   "name": "agent-init",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "One-shot scaffolder for a shared agent setup across Claude Code, Codex, opencode, Mistral Vibe, and Cursor.",
   "type": "module",
   "license": "MIT",
