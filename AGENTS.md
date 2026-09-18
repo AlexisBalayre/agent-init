@@ -20,7 +20,8 @@ Vibe, and Cursor.
   emulated. Silent degradation is the failure mode this project exists to avoid.
 - **Never ship employer-specific or personal content.** No internal tracker IDs, security-scanner
   identifiers, org names, or internal URLs in templates, docs, or tests.
-- **Facts about the five tools come from their docs**, with the source recorded in the matrix.
+- **Facts about the five tools come from their docs**, with the source and date recorded in the
+  matrix. Where the docs are silent, read the tool's source and cite file and line.
 
 ## Naming taxonomy
 

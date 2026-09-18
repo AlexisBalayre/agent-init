@@ -173,7 +173,7 @@ npx agent-init doctor
 
 Fires a probe hook against each locally installed tool and checks the block landed. Hooks that
 silently fail to block are the main risk in a five-tool port; `doctor` is how you catch them, and
-its output is the bug-report format.
+`--json` makes its output worth attaching to a bug report.
 
 ## Contributing
 
