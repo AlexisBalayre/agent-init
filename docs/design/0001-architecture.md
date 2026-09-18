@@ -424,9 +424,9 @@ ones. Instead the tooling is `agent-init review preflight|schema|post|metrics`, 
 workflow installs `agent-init` pinned to the version that scaffolded it. What lands in the
 repository is one YAML file. Node exists only on the CI runner, which already had to install it.
 
-- **Cost accepted: the workflow is inert until agent-init is published.** `npm install --global
-  agent-init@0.0.0` cannot resolve, so the install step fails red until v0.1 ships. A red step is
-  visible, and the poster only runs after it, so nobody gets a green PR from an unrun review.
+- **Resolved in decision 23:** until agent-init was published, `npm install --global
+  agent-init@0.0.0` could not resolve and the install step failed red. v0.1.0 is on npm, so an
+  emitted workflow installs the version that scaffolded it.
 - **Cost accepted: the CI contract is now agent-init's public API**, pinned per scaffold. A record
   written by one version is read by the retro under another, which is what `schema_version` is for.
 - **`zod` was not taken as a runtime dependency.** It did two jobs: emitting the contract as JSON
@@ -496,3 +496,25 @@ anyone. A documented gap beats an undocumented guarantee whose failure is silent
   payload under the four comment lines that explain why it exists, because Codex reads the policy
   per skill directory. A generator-side loop would hide them from the
   `--check` gate that keeps the committed tree honest.
+
+## 23. v0.1.0 on npm
+
+Date: 2026-09-18
+
+`npx agent-init` now resolves. The version matters beyond convenience: decision 21 emits a workflow
+that installs `agent-init@<version>` to run its own review tooling, so until something was published
+that pack shipped a red step. The pin is written at scaffold time, which makes the CI contract
+between the workflow, the `pr-ci-review` skill and the poster immovable until someone re-scaffolds.
+
+Published as `0.1.0` rather than `1.0.0`: the flag set is a public API from here (decision 10), the
+CI record's `schema_version` is its own contract, and four of the five tools are still wired from
+their documentation rather than from a run anyone has watched (the matrix says which). `0.1.0` says
+that honestly.
+
+**Verified before publishing**, from the packed tarball installed into a throwaway prefix rather
+than from the working tree: 95 files including `dist/`, every template, the seven reviewer agents
+and the fifteen Codex policy files; every emitted `.sh` still executable; then a real scaffold of a
+fresh repository with all five packs, `doctor` reporting the git-safety hook actually blocking its
+probe, `--check` clean on what had just been written, `agent-init review schema` emitting parseable
+JSON Schema, and `.agents/scripts/worktree-create.sh` creating a worktree. A package that installs
+but cannot scaffold would have been invisible to the test suite, which runs from source.
