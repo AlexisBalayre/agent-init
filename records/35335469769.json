@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-09-18T11:01:52.339Z",
+  "repository": "AlexisBalayre/agent-init",
+  "run_id": "35335469769",
+  "run_url": "https://github.com/AlexisBalayre/agent-init/actions/runs/35335469769",
+  "actor": "AlexisBalayre",
+  "commit_sha": "84d5f2765473aa19a844339fcc712f82e25c4db0",
+  "source": "pr",
+  "pr_number": 20,
+  "action": "review",
+  "reviewers_spawned": [
+    "correctness",
+    "correctness",
+    "security",
+    "security",
+    "context",
+    "conventions",
+    "maintainability",
+    "maintainability",
+    "docs"
+  ],
+  "reviewers_skipped": [],
+  "review_mode": "full",
+  "incremental_from_sha": null,
+  "prior_importants": [],
+  "findings": [
+    {
+      "file": "templates/agents/plugins/opencode/agent-init.js",
+      "line": "16,29",
+      "area": "correctness",
+      "confidence": "medium",
+      "tag": "important",
+      "description": "opencode's adapter sets AGENT_CWD to process.cwd() (the host process's cwd) instead of the resolved projectDir, so on a worktree it can silently report the wrong directory and defeat this PR's own worktree fix.",
+      "body": "This PR fixes `git-safety.sh` to read `${AGENT_CWD:-$PROJECT_DIR}` (templates/agents/hooks/policies/git-safety.sh#L46) so a git worktree's own branch is checked instead of the repository root's — the whole point being that a worktree checkout and the root can sit on different branches.\n\nEvery other adapter (claude-shaped.sh, cursor.sh) derives `AGENT_CWD` from the payload's own `cwd` field, independent of `AGENT_PROJECT_DIR`. opencode's adapter does not: `AgentInit` resolves `projectDir = worktree ?? directory ?? process.cwd()` (line 29) and threads it through as `AGENT_PROJECT_DIR`, but two lines above `runPolicy`'s env object it sets `AGENT_CWD: process.cwd()` directly (line 16) — the *plugin host's* current directory, not `projectDir`. Nothing ties the two together: when opencode calls this plugin with an explicit `worktree` argument (the case the whole PR exists for), `process.cwd()` still returns wherever the host process itself was launched from, which is not guaranteed to be the worktree.\n\nConcretely: if opencode's host process cwd is the repo root while `worktree` points at a checked-out worktree, `AGENT_CWD` reports the root and `git-safety.sh` checks the root's branch — exactly the bug this PR sets out to fix, just reintroduced on one of the five supported hosts.\n\nSuggest reusing the already-resolved `projectDir` (or `worktree ?? directory`, if it should ever need to diverge from `AGENT_PROJECT_DIR`) instead of an independent `process.cwd()` call.\n\n<https://github.com/AlexisBalayre/agent-init/blob/b93f90635be2a9e5a5700f9c1b8cf3a45d87a81b/templates/agents/plugins/opencode/agent-init.js#L11-L29>",
+      "suggestion": "  const result = spawnSync(\"bash\", [policy], {\n    env: { ...process.env, ...env, AGENT_TOOL: \"opencode\", AGENT_PROJECT_DIR: projectDir, AGENT_CWD: projectDir },\n    encoding: \"utf8\",\n  });"
+    },
+    {
+      "file": "templates/agents/hooks/CONTRACT.md",
+      "line": "25",
+      "area": "docs",
+      "confidence": "high",
+      "tag": "important",
+      "description": "CONTRACT.md documents AGENT_CWD as the session's real working directory across all hosts, but mistral-vibe.sh only ever aliases it to AGENT_PROJECT_DIR — so on Vibe this PR's worktree fix silently does not apply, and the contract doesn't say so.",
+      "body": "The new `AGENT_CWD` row reads: \"the session's working directory, which in a git worktree is not the repository root; falls back to `AGENT_PROJECT_DIR`\" — worded as a general guarantee every adapter provides.\n\nBut `mistral-vibe.sh` doesn't provide an independent value at all: it sets `AGENT_CWD=\"$AGENT_PROJECT_DIR\"` unconditionally (no lookup, not even the `${X:-fallback}` pattern the other adapters use — it's a plain alias). So on Mistral Vibe, `AGENT_CWD` is always identical to `AGENT_PROJECT_DIR`, and `git-safety.sh`'s `${AGENT_CWD:-$PROJECT_DIR}` read is a no-op there: this PR's worktree fix does not apply on Vibe, contrary to what the contract row implies.\n\nAGENTS.md is explicit about this exact failure mode: \"Never claim parity a tool does not have. A capability gap is documented in the matrix, not emulated. Silent degradation is the failure mode this project exists to avoid.\" The contract row as written is the silent-degradation case — it reads as parity Vibe doesn't have.\n\n<https://github.com/AlexisBalayre/agent-init/blob/b93f90635be2a9e5a5700f9c1b8cf3a45d87a81b/templates/agents/hooks/CONTRACT.md#L25>",
+      "suggestion": "| `AGENT_CWD` | the session's working directory, which in a git worktree is not the repository root; falls back to `AGENT_PROJECT_DIR`. On Mistral Vibe this is always an alias of `AGENT_PROJECT_DIR` — the payload carries no independent cwd, so the worktree fix does not apply there. |"
+    },
+    {
+      "file": "test/build.test.ts",
+      "line": "6-11",
+      "area": "docs",
+      "confidence": "high",
+      "tag": "important",
+      "description": "The test's docstring asserts \"a real publish of 0.1.0 carried a compiled file that existed only on an unmerged branch\" as a historical fact, but this repo has never had a git tag, GitHub release, or npm publish — the incident it cites never happened.",
+      "body": "The docstring above `describe(\"build\", ...)` states as established history: \"A real publish of 0.1.0 carried a compiled file that existed only on an unmerged branch.\" This repository has no git tags, no GitHub releases, and no publish/release commits anywhere in its history (verified via `git tag -l`, `gh api repos/AlexisBalayre/agent-init/tags`, and `gh api repos/AlexisBalayre/agent-init/releases` — all empty) despite `package.json` currently carrying `\"version\": \"0.1.0\"`. No publish of this package, 0.1.0 or otherwise, has ever occurred, so the incident the comment cites as having happened did not happen.\n\nThe underlying justification for the test is sound — `tsc` really does leave stale outputs in `dist/`, and clearing it before build is the right fix — but stating a fabricated incident as fact is exactly what AGENTS.md's comment rule guards against (\"why not what\" comments should describe a real invariant or a real bug, not an invented one), and a future reader has no way to tell this apart from a genuine postmortem. Recommend rephrasing as the general hazard (`tsc` never removes outputs whose source is gone, so a `dist/` accumulated across branches can ship stale files) without asserting a specific historical incident that didn't occur.\n\n<https://github.com/AlexisBalayre/agent-init/blob/b93f90635be2a9e5a5700f9c1b8cf3a45d87a81b/test/build.test.ts#L6-L11>",
+      "suggestion": null
+    },
+    {
+      "file": "test/build.test.ts",
+      "line": "18",
+      "area": "maintainability",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The test plants a stale file directly in the repo's own dist/ and shells out to npm run build against the real project tree, rather than isolating the fixture in a temp directory — a convention other tests in this repo (e.g. the worktree helpers in test/claude-code-adapter.test.ts) already follow.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "test/build.test.ts",
+      "line": "13-24",
+      "area": "maintainability",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The planted stale file (dist/review/gone-from-src.js) has no try/finally cleanup; if the assertions on lines 19-23 throw, the stale artifact is left behind in dist/ for subsequent test runs or a real build to trip over.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "templates/agents/hooks/policies/git-safety.sh",
+      "line": "44-46",
+      "area": "maintainability",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The new three-line comment explaining why AGENT_CWD is read instead of PROJECT_DIR duplicates CONTRACT.md's AGENT_CWD row almost word for word; the two will drift independently since nothing ties them together.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "templates/agents/hooks/adapters/claude-shaped.sh",
+      "line": "48-50",
+      "area": "maintainability",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "claude-shaped.sh and cursor.sh both extract AGENT_CWD from the payload with the same jq expression and fallback pattern; a third host repeating this will be the third copy with no shared helper.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "templates/agents/hooks/CONTRACT.md",
+      "line": "25",
+      "area": "conventions",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The AGENT_CWD contract row describes the variable's meaning but not that its source differs per adapter (payload cwd field vs. plain alias vs. independent lookup) — a reader has to check each adapter file to know which behavior applies to their host.",
+      "body": null,
+      "suggestion": null
+    }
+  ],
+  "refuted_findings": [],
+  "process_issues": [
+    {
+      "component": "platform",
+      "description": "This repo dogfoods its own .agents/ directory by symlinking it into templates/agents/ (ADR decision 11). The CI review harness's config-restore step resets .agents/ (and .claude/, CLAUDE.md, etc.) to base-branch bytes on disk before the review starts, because those paths are normally startup config the CLI would otherwise execute from the PR's own copy. But the symlink means that restore cascades through to templates/agents/hooks/** and templates/agents/plugins/opencode/agent-init.js on disk — six files that are the actual PR content under review, not startup config. .claude-pr/ only preserved .claude/settings.json and CLAUDE.md; it had no fallback copy for the six templates/agents/** files, so a plain Read tool call on any of them silently served stale, pre-PR bytes for the whole review. Verified independently mid-session by re-reading CONTRACT.md, git-safety.sh, claude-shaped.sh, cursor.sh, and mistral-vibe.sh via Read and finding they lacked the PR's AGENT_CWD changes entirely, then confirming the true content via git show HEAD:<path>. All reviewers were briefed to use git show/gh pr diff instead of Read for these six paths, and every finding in this record was independently verified against git show output before being included. Repos that dogfood .agents/ via a symlink into another tracked directory need either a .claude-pr/ fallback for the full symlink target, or the config-restore step needs to detect and skip resetting a symlinked path."
+    },
+    {
+      "component": "orchestrator",
+      "description": "The PR's head SHA moved once during the review, from 84d5f2765473aa19a844339fcc712f82e25c4db0 to b93f90635be2a9e5a5700f9c1b8cf3a45d87a81b, via a 'Merge remote-tracking branch origin/main into feat/clean-dist' commit. Verified via gh api .../compare that the merge brought in only unrelated changes (README.md, docs/capability-matrix.md, docs/design/0001-architecture.md, src/apply.utils.ts, src/cli.ts, src/plan.utils.ts, test/init.test.ts, test/symlink-fallback.test.ts from a separate, already-merged PR #19) and touched none of the 9 files under review, so all findings collected against the earlier SHA remain valid against the current head. Permalinks in this record use the current head SHA."
+    }
+  ],
+  "comments_posted_actual": 3,
+  "is_error": false,
+  "cost_usd": 9.518564849999997,
+  "duration_ms": 1515685,
+  "num_turns": 71,
+  "tokens": {
+    "input": 79,
+    "output": 101968,
+    "cache_read": 3118111,
+    "cache_creation": 191444,
+    "total": 3411602
+  }
+}
