@@ -5,7 +5,7 @@ Vibe, and Cursor.
 
 ## Read first
 
-- [`docs/design/0001-architecture.md`](docs/design/0001-architecture.md) — the nine decisions and
+- [`docs/design/0001-architecture.md`](docs/design/0001-architecture.md) — the 25 decisions and
   the cost accepted by each. Do not relitigate one without recording why.
 - [`docs/capability-matrix.md`](docs/capability-matrix.md) — what each tool actually supports.
   Verified from docs, with dates. If a claim here is not in that file, verify it before relying on it.
@@ -35,6 +35,10 @@ constraint, a gotcha. Never narrate what the code does.
 ## Git workflow
 
 Never commit to `main`. Branch per change, PRs only.
+
+Commit as `alexis@balayre.com`. `scripts/audit-authors.sh` fails CI on any author or committer
+outside [`.github/allowed-authors.txt`](.github/allowed-authors.txt), because a commit published
+under the wrong account can only be withdrawn by rewriting public history.
 
 <!-- agentspine:start -->
 ## Agent setup

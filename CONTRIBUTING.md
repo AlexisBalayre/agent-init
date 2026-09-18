@@ -15,10 +15,10 @@ the rules below.
 ```
 
 That is deliberate: this repository is scaffolded by its own tool, so editing a skill while working
-here edits the shipped skill, and any breakage surfaces here before it reaches anyone else. Edit either path; they are the
-same bytes. What you must not do is add a file under `.agents/` that has no counterpart in
-`templates/`, because `agentspine --check` compares the committed tree against what the generator
-would emit and will fail.
+here edits the shipped skill, and any breakage surfaces here before it reaches anyone else. Edit
+either path; they are the same bytes. What you must not do is add a file under `.agents/` that has
+no counterpart in `templates/`, because `agentspine --check` compares the committed tree against
+what the generator would emit and will fail.
 
 `.github/workflows/claude-code-review.yml` is generated from
 `templates/github/workflows/claude-code-review.yml` by `scripts/render-review-workflow.mjs`. Edit
@@ -44,6 +44,7 @@ npm run build
 | `agentspine --check` | The committed tree drifting from what the generator emits |
 | `shellcheck -s bash` | Every shell file we ship, targeting bash 3.2 |
 | `scripts/audit-templates.sh` | Employer, personal or originating-repo references in shipped content, and pointers to docs a scaffolded repo will not have |
+| `scripts/audit-authors.sh` | A commit authored or committed by an address outside `.github/allowed-authors.txt` |
 
 ## House rules
 
@@ -51,6 +52,22 @@ npm run build
 the one copy: Node-free output, near-zero runtime dependencies, never claiming parity a tool does
 not have, never shipping employer-specific content, the naming taxonomy, and the comment rule. Read
 it before your first change.
+
+### Commit identity
+
+`scripts/audit-authors.sh` fails the build if any commit in the history carries an author or
+committer address that is not in [`.github/allowed-authors.txt`](.github/allowed-authors.txt). A
+wrong identity is not a style problem: it publishes the commit under whichever account owns that
+address, and the only way to take it back is rewriting public history. Check `git config
+user.email` before your first commit.
+
+### Private leak-audit terms
+
+`scripts/audit-templates.sh` checks shipped content for employer and vendor fingerprints. The
+employer-specific terms are deliberately not in the script, because naming them in a public
+repository would itself be the leak. Supply them as one term per line in an untracked
+`.audit-fingerprints`, or as a regex alternation in `AUDIT_EXTRA_FINGERPRINTS`; CI reads the
+latter from a secret. With neither, the script says so on stderr and checks the public terms only.
 
 One thing it does not say, because it is about reviewing rather than writing:
 

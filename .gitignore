@@ -3,6 +3,8 @@ dist/
 *.log
 .DS_Store
 .env
+# Private leak-audit terms: naming them in a public repo would be the leak.
+.audit-fingerprints
 
 # <!-- agentspine:start -->
 .worktrees/
