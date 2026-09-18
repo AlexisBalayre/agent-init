@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-09-18T09:19:32.101Z",
+  "repository": "AlexisBalayre/agent-init",
+  "run_id": "35328595751",
+  "run_url": "https://github.com/AlexisBalayre/agent-init/actions/runs/35328595751",
+  "actor": "AlexisBalayre",
+  "commit_sha": "21ec5e29720394f33a0f246f1d6cde49dc8465af",
+  "source": "pr",
+  "pr_number": 17,
+  "action": "review",
+  "reviewers_spawned": [
+    "conventions",
+    "docs"
+  ],
+  "reviewers_skipped": [
+    "correctness",
+    "security",
+    "context",
+    "maintainability"
+  ],
+  "review_mode": "incremental",
+  "incremental_from_sha": "5835c7d92e815bc58ead558c69d87ebb015e0a9d",
+  "prior_importants": [
+    {
+      "file": "docs/design/0001-architecture.md",
+      "line": "509-512",
+      "status": "resolved"
+    }
+  ],
+  "findings": [],
+  "refuted_findings": [],
+  "process_issues": [],
+  "comments_posted_actual": 0,
+  "is_error": false,
+  "cost_usd": 0.8707428499999998,
+  "duration_ms": 188472,
+  "num_turns": 15,
+  "tokens": {
+    "input": 17,
+    "output": 6624,
+    "cache_read": 324921,
+    "cache_creation": 32393,
+    "total": 363955
+  }
+}
