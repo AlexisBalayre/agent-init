@@ -9,8 +9,26 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 # quality.toml deliberately shows a real toolchain as a commented-out example.
 EXCLUDE="templates/agents/quality.toml"
 
-# Vendor and workflow identifiers that betray a specific employer or person.
-FINGERPRINTS='acolad|sonarqube|sonar_|wiz_|linear\.app|atlassian|TRACKER_[A-Z_]+|OBSIDIAN_|\.internal\b'
+# Vendor and workflow identifiers that betray a specific employer or person. Naming the
+# employer here would itself leak it, so employer-specific terms stay out of this file and
+# arrive at runtime instead.
+FINGERPRINTS='sonarqube|sonar_|wiz_|linear\.app|atlassian|TRACKER_[A-Z_]+|OBSIDIAN_|\.internal\b'
+
+# Private terms, as a regex alternation, from an untracked file or the environment. CI supplies
+# them from a secret. Absence is reported rather than passed over: a guard that quietly stops
+# checking half of what it claims to check is the failure this project exists to avoid.
+PRIVATE_FILE="${AUDIT_FINGERPRINTS_FILE:-.audit-fingerprints}"
+PRIVATE=""
+if [ -f "$PRIVATE_FILE" ]; then
+  PRIVATE=$(grep -vE '^[[:space:]]*(#|$)' "$PRIVATE_FILE" | paste -sd '|' -)
+elif [ -n "${AUDIT_EXTRA_FINGERPRINTS:-}" ]; then
+  PRIVATE="$AUDIT_EXTRA_FINGERPRINTS"
+fi
+if [ -n "$PRIVATE" ]; then
+  FINGERPRINTS="$FINGERPRINTS|$PRIVATE"
+else
+  printf 'audit-templates: no private fingerprint list; checking public terms only.\n' >&2
+fi
 # Names and paths that only exist in the repository this content was extracted from.
 COUPLING='acme|docs/conventions/|pnpm-lock|_journal\.json|PROJ-[0-9]'
 # agentspine's own docs never land in a scaffolded repo, so shipped content citing them sends the
