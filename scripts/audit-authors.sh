@@ -26,15 +26,30 @@ is_allowed() {
   printf '%s\n' "$allowed" | grep -qxF "$1"
 }
 
+# Read the log up front so a git failure cannot look like an empty, and therefore clean, history.
+if ! log=$(git log --format='%h|author|%ae|%an%n%h|committer|%ce|%cn' "$RANGE" 2>&1); then
+  printf 'audit-authors: could not read the history for %s: %s\n' "$RANGE" "$log" >&2
+  exit 1
+fi
+if [ -z "$log" ]; then
+  printf 'audit-authors: %s selected no commits; refusing to report a clean result.\n' "$RANGE" >&2
+  exit 1
+fi
+
 status=0
-while IFS='|' read -r sha kind name email; do
+# The address comes before the name in the format above. Git forbids only <, > and newlines in an
+# identity, so a name containing the | delimiter would shift the split; putting the name last
+# means the overflow lands there harmlessly rather than corrupting the address being checked.
+while IFS='|' read -r sha kind email name; do
   [ -n "$email" ] || continue
   lower=$(printf '%s' "$email" | tr '[:upper:]' '[:lower:]')
   if ! is_allowed "$lower"; then
     printf 'Unapproved %s identity on %s: %s <%s>\n' "$kind" "$sha" "$name" "$email" >&2
     status=1
   fi
-done < <(git log --format='%h|author|%an|%ae%n%h|committer|%cn|%ce' "$RANGE")
+done <<EOF
+$log
+EOF
 
 if [ "$status" -ne 0 ]; then
   printf '\nEvery commit must be authored and committed by an address in %s.\n' "$ALLOWLIST" >&2

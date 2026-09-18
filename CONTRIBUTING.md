@@ -55,19 +55,19 @@ it before your first change.
 
 ### Commit identity
 
-`scripts/audit-authors.sh` fails the build if any commit in the history carries an author or
-committer address that is not in [`.github/allowed-authors.txt`](.github/allowed-authors.txt). A
-wrong identity is not a style problem: it publishes the commit under whichever account owns that
-address, and the only way to take it back is rewriting public history. Check `git config
-user.email` before your first commit.
+AGENTS.md has the rule. The practical part: check `git config user.email` before your first
+commit, because `scripts/audit-authors.sh` reads the whole history, so a bad identity fails CI
+long after the commit that introduced it.
 
 ### Private leak-audit terms
 
 `scripts/audit-templates.sh` checks shipped content for employer and vendor fingerprints. The
 employer-specific terms are deliberately not in the script, because naming them in a public
 repository would itself be the leak. Supply them as one term per line in an untracked
-`.audit-fingerprints`, or as a regex alternation in `AUDIT_EXTRA_FINGERPRINTS`; CI reads the
-latter from a secret. With neither, the script says so on stderr and checks the public terms only.
+`.audit-fingerprints` (or another path via `AUDIT_FINGERPRINTS_FILE`), or as a regex alternation
+in `AUDIT_EXTRA_FINGERPRINTS`; CI reads the latter from a secret. With neither, the script says so
+on stderr and checks the public terms only. A list that does not compile as a regex fails the run
+outright rather than matching nothing and reading as clean.
 
 One thing it does not say, because it is about reviewing rather than writing:
 

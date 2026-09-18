@@ -20,7 +20,10 @@ FINGERPRINTS='sonarqube|sonar_|wiz_|linear\.app|atlassian|TRACKER_[A-Z_]+|OBSIDI
 PRIVATE_FILE="${AUDIT_FINGERPRINTS_FILE:-.audit-fingerprints}"
 PRIVATE=""
 if [ -f "$PRIVATE_FILE" ]; then
-  PRIVATE=$(grep -vE '^[[:space:]]*(#|$)' "$PRIVATE_FILE" | paste -sd '|' -)
+  # Surrounding whitespace on a hand-edited line would otherwise become part of the
+  # alternative and quietly stop it matching.
+  PRIVATE=$(sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' "$PRIVATE_FILE" \
+    | grep -vE '^(#|$)' | paste -sd '|' -)
 elif [ -n "${AUDIT_EXTRA_FINGERPRINTS:-}" ]; then
   PRIVATE="$AUDIT_EXTRA_FINGERPRINTS"
 fi
@@ -28,6 +31,18 @@ if [ -n "$PRIVATE" ]; then
   FINGERPRINTS="$FINGERPRINTS|$PRIVATE"
 else
   printf 'audit-templates: no private fingerprint list; checking public terms only.\n' >&2
+fi
+
+# The private list is hand-written and reaches us through a secret, so it can be malformed.
+# An uncompilable pattern makes grep match nothing, which would read as "clean" -- the guard
+# would report success having scanned nothing at all. Refuse to run instead.
+pattern_error=$(printf '' | grep -E "$FINGERPRINTS" 2>&1 >/dev/null)
+pattern_status=$?
+# 0 matched, 1 no match; both mean the pattern compiled. Anything higher does not.
+if [ "$pattern_status" -gt 1 ]; then
+  printf 'audit-templates: fingerprint pattern does not compile (%s); fix the private list.\n' \
+    "$pattern_error" >&2
+  exit 1
 fi
 # Names and paths that only exist in the repository this content was extracted from.
 COUPLING='acme|docs/conventions/|pnpm-lock|_journal\.json|PROJ-[0-9]'
@@ -38,8 +53,17 @@ OWN_DOCS='docs/capability-matrix|docs/design/'
 status=0
 scan() {
   local label="$1" pattern="$2"
-  local hits
-  hits=$(grep -rniE "$pattern" templates/ 2>/dev/null | grep -v "^$EXCLUDE:")
+  local raw rc hits
+  # grep's stderr is kept and its status inspected: 0 matched, 1 clean, anything else is a
+  # failure to scan, which must never be mistaken for a clean result.
+  raw=$(grep -rniE "$pattern" templates/)
+  rc=$?
+  if [ "$rc" -gt 1 ]; then
+    printf '%s: scan failed (grep exit %d); treating as a failure, not as clean.\n' "$label" "$rc" >&2
+    status=1
+    return
+  fi
+  hits=$(printf '%s' "$raw" | grep -v "^$EXCLUDE:")
   if [ -n "$hits" ]; then
     printf '%s:\n%s\n\n' "$label" "$hits" >&2
     status=1
