@@ -1,0 +1,44 @@
+name: Feature or support request
+description: A tool to support, a skill to ship, or a capability to add
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do
+      description: The workflow you want, not the implementation. What breaks today?
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - Support another coding agent
+        - A skill or pack to ship
+        - A hook policy
+        - CLI behaviour or flag
+        - Docs
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence from the tool's docs
+      description: |
+        For a new tool or capability, this is the part that decides whether it can ship. Where does
+        the tool document the path, config key or event? Link it. Where its docs are silent, a link
+        to the source, with file and line, does the job.
+      placeholder: |
+        Skills path: https://…
+        Hook events and how a hook blocks: https://…
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Constraints this would respect
+      description: See CONTRIBUTING.md. These are not negotiable, so it helps to say how the idea fits.
+      options:
+        - label: What lands in a user's repository stays markdown or POSIX shell
+        - label: It needs no new runtime dependency, or the request says why one is worth the npx cold start
+        - label: Any capability a tool lacks would be documented rather than emulated
