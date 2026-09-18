@@ -25,7 +25,7 @@ function runPolicy(policyName, env, projectDir) {
   return { blocked: false };
 }
 
-export const AgentInit = async ({ directory, worktree }) => {
+export const AgentSpine = async ({ directory, worktree }) => {
   const projectDir = worktree ?? directory ?? process.cwd();
 
   return {

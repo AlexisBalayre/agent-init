@@ -561,7 +561,12 @@ spoken could land them on someone else's package.
 `agentspine` is one word, so there is no hyphen to misremember; nothing similar is registered in
 either spelling; and the metaphor is the product, one spine every agent reads from.
 
-- **Cost accepted:** a rename across 45 files, the repository, and the managed-block markers
+- **Caught by the review, not by me:** the sweep rewrote file *contents* and never renamed *files*,
+  so `plan.utils` pointed at `templates/.../agentspine.js` while the template on disk was still
+  `agent-init.js`. Every scaffold with opencode would have thrown `ENOENT`. Two things hid it: the
+  all-tools test never asserted the exit status, so a crashed run still passed its file
+  assertions, and the CI drift gate only checked `--tools claude-code`. Both are fixed here.
+- **Cost accepted:** a rename across 46 files, the repository, and the managed-block markers
   (`<!-- agentspine:start -->`). Markers are the one part a user's repository keeps, so a later
   rename would orphan the blocks in every scaffolded repo and leave `init` unable to find what it
   wrote. Nothing was published under the old name, so this is the last cheap moment to do it.

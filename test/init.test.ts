@@ -104,7 +104,8 @@ describe("init", () => {
   });
 
   it("wires every supported tool when asked", () => {
-    runCli(["--dir", repo, "--tools", "claude-code,opencode,codex,mistral-vibe,cursor", "--yes"]);
+    const { status, stderr } = runCli(["--dir", repo, "--tools", "claude-code,opencode,codex,mistral-vibe,cursor", "--yes"]);
+    expect(status, stderr).toBe(0);
 
     const codex = readFileSync(path.join(repo, ".codex/config.toml"), "utf8");
     expect(codex).toContain("[[hooks.PreToolUse]]");
@@ -125,6 +126,9 @@ describe("init", () => {
     expect(existsSync(path.join(repo, ".codex/skills"))).toBe(false);
     // Claude Code is the one host that still needs the link.
     expect(lstatSync(path.join(repo, ".claude/skills")).isSymbolicLink()).toBe(true);
+    // opencode's shim is a real file copied from templates: a path the generator names but does
+    // not ship makes init throw, and every assertion above still passes on the half-written tree.
+    expect(existsSync(path.join(repo, ".opencode/plugins/agentspine.js"))).toBe(true);
   });
 
   // TOML is spliced as text precisely so a user's comments and ordering survive.
