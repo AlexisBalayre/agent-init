@@ -91,8 +91,9 @@ command or a tracker, it reads the project map rather than assuming a layout. Th
 publish to whatever issue tracker the session can reach, or write local markdown under
 `docs/plans/` when there is none.
 
-Several of these skills are meant to run only when you name them. Claude Code and Cursor honour that;
-on Codex, opencode and Mistral Vibe the model can also fire them on its own. See
+Several of these skills are meant to run only when you name them. Claude Code and Cursor honour
+that from frontmatter, and Codex gets the same effect from a file emitted beside each one. On
+opencode and Mistral Vibe the model can still fire them itself. See
 [the matrix](docs/capability-matrix.md#skill-invocation-control).
 
 The `review` pack also installs `.agents/agents/` and links it into Claude Code, opencode and
