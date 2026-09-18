@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-09-18T14:48:48.935Z",
+  "repository": "AlexisBalayre/agentspine",
+  "run_id": "35357163690",
+  "run_url": "https://github.com/AlexisBalayre/agentspine/actions/runs/35357163690",
+  "actor": "AlexisBalayre",
+  "commit_sha": "27b02096577303082d93b787f3935f6fbe15ece3",
+  "source": "pr",
+  "pr_number": 24,
+  "action": "review",
+  "reviewers_spawned": [
+    "correctness",
+    "security",
+    "context",
+    "conventions",
+    "maintainability",
+    "docs"
+  ],
+  "reviewers_skipped": [],
+  "review_mode": "full",
+  "incremental_from_sha": null,
+  "prior_importants": [],
+  "findings": [
+    {
+      "file": "scripts/audit-authors.sh",
+      "line": "30,43",
+      "area": "security",
+      "confidence": "medium",
+      "tag": "important",
+      "description": "Reordering the git-log fields to put email before name (to stop a `|` in the name from corrupting the parse) opens the same bug on the email side: since `email` is no longer the last `read` field, a `|` embedded in an attacker-controlled `user.email` now truncates `email` at the first pipe, so `alexis@balayre.com|anything` reads as the allowlisted `alexis@balayre.com` and passes as clean even though the full recorded identity is not on the allowlist.",
+      "body": "This PR reorders the `git log` format from `%h|author|%an|%ae%n%h|committer|%cn|%ce` to `%h|author|%ae|%an%n%h|committer|%ce|%cn`, and the `read` from `IFS='|' read -r sha kind name email` to `IFS='|' read -r sha kind email name`, to fix a `|`-in-name bug. It closes that gap but opens the symmetric one: `read -r v1 v2 v3 v4` only IFS-splits up through the second-to-last variable — the last one absorbs the remainder verbatim, including any embedded delimiters. With `email` now third (not last), a value like `git config user.email 'alexis@balayre.com|extra'` — which git accepts, since `fmt_ident()` forbids only `<`, `>`, and newlines, not `|` (this PR's own comment on lines 40-41 states this) — renders via `%ae` as `alexis@balayre.com|extra`. `read` then splits `email=alexis@balayre.com` and dumps `extra` into `name` (the trailing field, unused by the allowlist check). `is_allowed()` (`grep -qxF`, full-line exact match) matches the truncated `alexis@balayre.com` against `.github/allowed-authors.txt`, so the script prints \"Commit identities clean\" for a commit whose actual recorded identity (`alexis@balayre.com|extra`) is not on the allowlist — exactly the silent-pass failure mode this PR exists to eliminate, just moved from name to email.\n\nPre-PR, `email` was the *last* field, so a `|`-bearing email was captured whole and (correctly) failed the exact-match allowlist check — this specific bypass is newly introduced by this PR's reordering, not pre-existing.\n\nA NUL-delimited log format (`git log -z --format=... ` with `%x00` field separators) or an explicit rejection of any parsed field containing `|` would close both directions without reintroducing either bug.\n\nCode: https://github.com/AlexisBalayre/agentspine/blob/27b02096577303082d93b787f3935f6fbe15ece3/scripts/audit-authors.sh#L29-L52",
+      "suggestion": null
+    },
+    {
+      "file": "scripts/audit-templates.sh",
+      "line": "39-46",
+      "area": "conventions",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The new pattern-precompile check captures grep's own stderr and prints it verbatim in the failure message; on some grep implementations the regex-compile error echoes the failing pattern text back, which for a malformed private/secret fingerprint term would print that private term into CI logs — the exact leak this script exists to prevent. Not confirmed against the actual GitHub Actions runner's GNU grep (which, unlike some grep variants, is not known to echo the pattern in its compile diagnostics), so this is unverified rather than demonstrated — worth a quick check with a real malformed-pattern CI run before relying on it.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "scripts/audit-authors.sh",
+      "line": "50-52",
+      "area": "maintainability",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The heredoc (`done <<EOF` / `$log` / `EOF`) feeding the while loop is correct but heavier than needed — a herestring (`done <<<\"$log\"`) does the same job of feeding one variable's contents to `while read` with less punctuation and no delimiter to track.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "scripts/audit-templates.sh",
+      "line": "59-65",
+      "area": "maintainability",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The pattern-precompile check and the `audit-authors.sh` log-read both capture and print the underlying command's stderr text on failure, but `scan()`'s new failure branch only reports grep's numeric exit code, not its stderr text — an inconsistency in an otherwise coherent hardening pass across the two scripts.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "scripts/audit-templates.sh",
+      "line": "37",
+      "area": "docs",
+      "confidence": "high",
+      "tag": "nit",
+      "description": "New comment introduced by this diff uses the ` -- ` em-dash substitute (\"...read as 'clean' -- the guard would report success...\"). House style for this repo's review-docs manifest flags em/en dashes and the ` -- ` substitute in new prose; use a period, comma, or parenthetical instead.",
+      "body": null,
+      "suggestion": null
+    }
+  ],
+  "refuted_findings": [],
+  "process_issues": [],
+  "comments_posted_actual": 1,
+  "is_error": false,
+  "cost_usd": 4.1551081000000005,
+  "duration_ms": 756461,
+  "num_turns": 50,
+  "tokens": {
+    "input": 73,
+    "output": 42199,
+    "cache_read": 2543608,
+    "cache_creation": 104112,
+    "total": 2689992
+  }
+}
