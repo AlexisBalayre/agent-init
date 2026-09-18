@@ -77,12 +77,12 @@ describe("git-safety across worktrees", () => {
     return { root, tree };
   }
 
-  function runFromCwd(projectDir: string, cwd: string) {
+  function runFromCwd(projectDir: string, cwd: string, command = ["git", "commit", "-m", "work"].join(" ")) {
     const payload = JSON.stringify({
       hook_event_name: "PreToolUse",
       tool_name: "Bash",
       cwd,
-      tool_input: { command: ["git", "commit", "-m", "work"].join(" ") },
+      tool_input: { command },
     });
     return spawnSync("bash", [ADAPTER, "git-safety"], {
       input: payload,
@@ -101,5 +101,51 @@ describe("git-safety across worktrees", () => {
     const result = runFromCwd(root, root);
     expect(result.status).toBe(2);
     expect(result.stderr).toContain("Branch first");
+  });
+});
+
+/**
+ * Cutting a release means tagging trunk and pushing the tag from it. That publishes a ref pointing
+ * at trunk; it does not move trunk. Refusing it sent the v0.1.0 tag on a detour through a worktree.
+ */
+describe("git-safety and release tags", () => {
+  function taggedRepo() {
+    const root = mkdtempSync(path.join(tmpdir(), "agentspine-tag-"));
+    const git = (...args: string[]) =>
+      spawnSync("git", ["-c", "user.email=t@t", "-c", "user.name=t", ...args], { cwd: root, encoding: "utf8" });
+    git("init", "-q", "-b", "main");
+    writeFileSync(path.join(root, "a.txt"), "x\n");
+    git("add", "-A");
+    git("commit", "-qm", "init");
+    git("tag", "-a", "v9.9.9", "-m", "release");
+    return root;
+  }
+
+  const run = (root: string, command: string) =>
+    spawnSync("bash", [ADAPTER, "git-safety"], {
+      input: JSON.stringify({
+        hook_event_name: "PreToolUse",
+        tool_name: "Bash",
+        cwd: root,
+        tool_input: { command },
+      }),
+      encoding: "utf8",
+      env: { ...process.env, CLAUDE_PROJECT_DIR: root },
+    });
+
+  it.each([
+    ["an existing tag by name", "git push origin v9.9.9"],
+    ["every tag", "git push origin --tags"],
+    ["a fully qualified tag ref", "git push origin refs/tags/v9.9.9"],
+  ])("allows pushing %s from trunk", (_label, command) => {
+    expect(run(taggedRepo(), command).status).toBe(0);
+  });
+
+  it.each([
+    ["the branch itself", "git push origin main"],
+    ["a name that is not a tag", "git push origin v0.0.1"],
+    ["a plain push", "git push"],
+  ])("still blocks pushing %s from trunk", (_label, command) => {
+    expect(run(taggedRepo(), command).status).toBe(2);
   });
 });
