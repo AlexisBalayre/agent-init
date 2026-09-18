@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or idea
+    url: https://github.com/AlexisBalayre/agent-init/discussions
+    about: Anything that is not yet a bug or a concrete request.
+  - name: Security vulnerability
+    url: https://github.com/AlexisBalayre/agent-init/security/advisories/new
+    about: Report privately. A hook that fails to block counts; see SECURITY.md for scope.
+  - name: What each tool supports
+    url: https://github.com/AlexisBalayre/agent-init/blob/main/docs/capability-matrix.md
+    about: Sourced and dated. A gap listed here is known, not a bug.

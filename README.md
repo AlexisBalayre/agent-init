@@ -1,16 +1,28 @@
 # agent-init
 
-> **Status: v0.1.0, all five tools wired.** The architecture is recorded in
-> [`docs/design/0001-architecture.md`](docs/design/0001-architecture.md).
+[![npm](https://img.shields.io/npm/v/agent-init?color=cb3837&logo=npm)](https://www.npmjs.com/package/agent-init)
+[![ci](https://github.com/AlexisBalayre/agent-init/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexisBalayre/agent-init/actions/workflows/ci.yml)
+[![node](https://img.shields.io/badge/node-%3E%3D20-5fa04e?logo=node.js&logoColor=white)](package.json)
+[![licence](https://img.shields.io/badge/licence-MIT-blue)](LICENSE)
 
-One command to give a repository a shared agent setup that **Claude Code, Codex, opencode, Mistral
-Vibe, and Cursor all read** — conventions, skills, and deterministic hooks, stored once.
+**Five coding agents, five config directories, one setup.** `agent-init` writes your conventions,
+skills and blocking hooks **once** into `.agents/`, then wires **Claude Code, Codex, opencode,
+Mistral Vibe and Cursor** to read them.
 
 ```bash
 npx agent-init
 ```
 
-## The idea
+- **One copy of everything.** Edit a skill once, every tool sees it.
+- **Hooks that actually block.** Shared policies, a per-tool adapter for each host's protocol, and
+  `doctor` to prove the block landed rather than assuming it.
+- **Opt-in skill packs.** Multi-agent code review, TDD, diagnosis, planning: installed once, read
+  by every tool.
+
+Architecture and the reasoning behind each decision: [`docs/design/0001-architecture.md`](docs/design/0001-architecture.md).
+What each tool actually supports, with sources and dates: [`docs/capability-matrix.md`](docs/capability-matrix.md).
+
+## The problem
 
 Every one of these tools wants its own directory. Maintain five and they drift: a skill written
 three times, a hook wired four ways, a convention updated in one file and stale in the rest.
@@ -161,8 +173,14 @@ npx agent-init doctor
 
 Fires a probe hook against each locally installed tool and checks the block landed. Hooks that
 silently fail to block are the main risk in a five-tool port; `doctor` is how you catch them, and
-its output is the bug-report format.
+`--json` makes its output worth attaching to a bug report.
 
-## License
+## Contributing
+
+`.agents/` in this repository symlinks into `templates/`, so editing a skill here edits the shipped
+skill. [`CONTRIBUTING.md`](CONTRIBUTING.md) says which path is canonical and what CI will hold you
+to. Bug reports are welcome.
+
+## Licence
 
 [MIT](LICENSE)
