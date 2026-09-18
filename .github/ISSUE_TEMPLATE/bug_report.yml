@@ -5,7 +5,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        `agent-init doctor --json` answers most of this. Paste it below and skip the fields it covers.
+        If the repository is already scaffolded, `agent-init doctor --json` is the fastest way to show
+        the wiring and whether a probe hook blocked. The other fields still need you.
   - type: textarea
     id: doctor
     attributes:

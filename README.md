@@ -16,9 +16,8 @@ npx agent-init
 - **One copy of everything.** Edit a skill once, every tool sees it.
 - **Hooks that actually block.** Shared policies, a per-tool adapter for each host's protocol, and
   `doctor` to prove the block landed rather than assuming it.
-- **Node-free output.** What lands in your repo is markdown and POSIX shell, so a Go or Python
-  project gets no `package.json`.
-- **No pretending.** Where a tool cannot do something, it is written down, not emulated.
+- **Opt-in skill packs.** Multi-agent code review, TDD, diagnosis, planning: installed once, read
+  by every tool.
 
 Architecture and the reasoning behind each decision: [`docs/design/0001-architecture.md`](docs/design/0001-architecture.md).
 What each tool actually supports, with sources and dates: [`docs/capability-matrix.md`](docs/capability-matrix.md).
@@ -180,7 +179,7 @@ its output is the bug-report format.
 
 `.agents/` in this repository symlinks into `templates/`, so editing a skill here edits the shipped
 skill. [`CONTRIBUTING.md`](CONTRIBUTING.md) says which path is canonical and what CI will hold you
-to. Bug reports are welcome, and `agent-init doctor --json` is the format to paste.
+to. Bug reports are welcome.
 
 ## Licence
 
