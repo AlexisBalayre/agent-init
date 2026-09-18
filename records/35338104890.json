@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-09-18T11:24:35.385Z",
+  "repository": "AlexisBalayre/agent-init",
+  "run_id": "35338104890",
+  "run_url": "https://github.com/AlexisBalayre/agent-init/actions/runs/35338104890",
+  "actor": "AlexisBalayre",
+  "commit_sha": "ffc940de68d3f55f0036209139ba3ca1fb72b2d9",
+  "source": "pr",
+  "pr_number": 21,
+  "action": "review",
+  "reviewers_spawned": [
+    "correctness",
+    "correctness",
+    "security",
+    "context",
+    "conventions",
+    "maintainability",
+    "docs"
+  ],
+  "reviewers_skipped": [],
+  "review_mode": "full",
+  "incremental_from_sha": null,
+  "prior_importants": [],
+  "findings": [
+    {
+      "file": "src/plan.utils.ts",
+      "line": "311-312",
+      "area": "correctness",
+      "confidence": "high",
+      "tag": "important",
+      "description": "The opencode plugin copy action's `from`/`target` paths were renamed to `agentspine.js`, but the source template file was never renamed on disk (it's still `templates/agents/plugins/opencode/agent-init.js`), so the copy throws ENOENT for any default scaffold with opencode selected.",
+      "body": "This PR's rename changed the opencode-plugin copy action in `src/plan.utils.ts` (and the matching `WIRING` entry in `src/cli.ts:234`) from referencing `agent-init.js` to `agentspine.js`:\n\n```ts\nactions.push({\n  kind: \"copy\",\n  target: \".opencode/plugins/agentspine.js\",\n  from: path.join(templates, \"agents/plugins/opencode/agentspine.js\"),\n});\n```\n\nBut the actual template file on disk was never renamed — it's still `templates/agents/plugins/opencode/agent-init.js` (only its contents were edited; `git diff --name-status` shows `M`, not a rename). No `agentspine.js` file exists anywhere under `templates/agents/plugins/opencode/`.\n\n`src/apply.utils.ts`'s `\"copy\"` case calls `cpSync(action.from, target)` with no try/catch, and the `--check` path (`wouldChange`) does `readFileSync(action.from, ...)` — both throw `ENOENT` on the missing source. Since `hooks` defaults to `true` (`src/cli.ts:58`), any `npx agentspine` run (or `--check`) with opencode detected or selected crashes instead of scaffolding. This also breaks the repo's own dogfood copy at `.opencode/plugins/agent-init.js` (never renamed) and its own `agentspine --check`/`doctor` gate, which `docs/design/0001-architecture.md`'s decision on that gate and this PR's own \"Merge danger\" section both point to as the safety net for exactly this class of drift.\n\nThe companion doc `templates/agents/plugins/opencode/README.md:3` was updated to say the plugin is \"Copied to `.opencode/plugins/agentspine.js`\" — describing a copy that cannot currently succeed.\n\nFix: rename `templates/agents/plugins/opencode/agent-init.js` to `agentspine.js` (and its exported `AgentInit` identifier for consistency), matching the paths already updated in `src/plan.utils.ts` and `src/cli.ts`.\n\n<https://github.com/AlexisBalayre/agent-init/blob/ffc940de68d3f55f0036209139ba3ca1fb72b2d9/src/plan.utils.ts#L311-L312>",
+      "suggestion": null
+    },
+    {
+      "file": "src/managed-block.utils.ts",
+      "line": "1-2",
+      "area": "correctness",
+      "confidence": "high",
+      "tag": "nit",
+      "description": "BLOCK_START/BLOCK_END markers moved from `<!-- agent-init:start -->` to `<!-- agentspine:start -->`; since `spliceManagedBlock` matches the old marker by exact string, any file already carrying the old marker would get a second block appended instead of updated in place — moot here since nothing was ever published under the old name, but worth a one-time grep if any internal or dogfood repo already has old markers.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "docs/design/0001-architecture.md",
+      "line": "558-568",
+      "area": "conventions",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "Decision 25's \"Cost accepted: a rename across 45 files\" undercounts (the PR actually touches 46) and doesn't disclose that one of those files' rename is incomplete (the opencode plugin template, see the correctness finding above) — AGENTS.md asks decisions to honestly record the cost accepted, and this one reads as a completed, low-risk rename when it isn't quite.",
+      "body": null,
+      "suggestion": null
+    },
+    {
+      "file": "docs/design/0001-architecture.md",
+      "line": "4",
+      "area": "docs",
+      "confidence": "medium",
+      "tag": "pre-existing",
+      "description": "The file's intro still says \"The nine decisions that define `agentspine`\" even though it now runs through decision 25 — stale before this PR (only the backticked name was substituted here), not introduced by this diff.",
+      "body": null,
+      "suggestion": null
+    }
+  ],
+  "refuted_findings": [],
+  "process_issues": [
+    {
+      "component": "orchestrator",
+      "description": "I briefed reviewers that only AGENTS.md, CLAUDE.md, and the top-level .agents/quality.toml were in the CI config-restore set. The actual working tree at run start showed the entire templates/ subtree (hook adapters, quality.toml, skill docs, the opencode plugin, the rendered workflow) also reset to base-branch bytes — one reviewer's own inspection of the emitted workflow found `RESTORE_PATHS: \"AGENTS.md .agents templates\"`, confirming templates/ is restored too. Reviewers who relied on `Read`/`find` directly against templates/ paths (instead of `git diff`/`git show HEAD:<path>`) would have seen stale base-branch content and could have missed real changes there. Most reviewers self-corrected by using git-based reads, but this was luck rather than an accurate brief; the restore-set list in future briefs should be verified against the workflow's actual RESTORE_PATHS rather than assumed from the skill's example list."
+    }
+  ],
+  "comments_posted_actual": 1,
+  "is_error": false,
+  "cost_usd": 12.762827749999996,
+  "duration_ms": 943175,
+  "num_turns": 46,
+  "tokens": {
+    "input": 63,
+    "output": 35917,
+    "cache_read": 1710746,
+    "cache_creation": 88539,
+    "total": 1835265
+  }
+}
