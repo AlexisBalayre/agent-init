@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-09-18T15:54:36.568Z",
+  "repository": "AlexisBalayre/agentspine",
+  "run_id": "35364808385",
+  "run_url": "https://github.com/AlexisBalayre/agentspine/actions/runs/35364808385",
+  "actor": "AlexisBalayre",
+  "commit_sha": "2c9a30e13ddea420be3b725f697dba556e619ca2",
+  "source": "pr",
+  "pr_number": 25,
+  "action": "review",
+  "reviewers_spawned": [
+    "correctness",
+    "security",
+    "conventions",
+    "maintainability",
+    "docs"
+  ],
+  "reviewers_skipped": [
+    "context"
+  ],
+  "review_mode": "full",
+  "incremental_from_sha": null,
+  "prior_importants": [],
+  "findings": [
+    {
+      "file": "scripts/audit-templates.sh",
+      "line": "47-48",
+      "area": "maintainability",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "The withheld-error message is split across two separate `printf` calls, unlike every other multi-line message in this file (e.g. line 39's original single printf with backslash continuation, or scan()'s `printf '%s:\\n%s\\n\\n' ...` at line 75), which compose multi-line output from one printf call.",
+      "body": null,
+      "suggestion": "printf 'audit-templates: the fingerprint pattern does not compile. The private list forms\\npart of it, so the error is withheld rather than echoed; check the private terms.\\n' >&2"
+    },
+    {
+      "file": "scripts/audit-templates.sh",
+      "line": "30,43",
+      "area": "maintainability",
+      "confidence": "medium",
+      "tag": "nit",
+      "description": "`[ -n \"$PRIVATE\" ]` is now tested twice for different purposes (building the pattern vs. deciding whether to redact the error); not worth extracting yet, but worth naming if a third use case appears.",
+      "body": null,
+      "suggestion": null
+    }
+  ],
+  "refuted_findings": [],
+  "process_issues": [],
+  "comments_posted_actual": 0,
+  "is_error": false,
+  "cost_usd": 1.2635796,
+  "duration_ms": 219241,
+  "num_turns": 17,
+  "tokens": {
+    "input": 23,
+    "output": 13003,
+    "cache_read": 472702,
+    "cache_creation": 41192,
+    "total": 526920
+  }
+}
