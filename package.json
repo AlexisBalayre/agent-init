@@ -12,13 +12,22 @@
   "keywords": [
     "agents",
     "AGENTS.md",
+    "agents-md",
     "claude-code",
     "codex",
     "opencode",
     "mistral-vibe",
     "cursor",
     "skills",
-    "hooks"
+    "agent-skills",
+    "hooks",
+    "ai-agents",
+    "coding-agents",
+    "ai-coding-assistant",
+    "code-review",
+    "scaffolding",
+    "developer-tools",
+    "cli"
   ],
   "engines": {
     "node": ">=20"
