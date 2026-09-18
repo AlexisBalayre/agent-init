@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-09-18T10:15:00.556Z",
+  "repository": "AlexisBalayre/agent-init",
+  "run_id": "35333235798",
+  "run_url": "https://github.com/AlexisBalayre/agent-init/actions/runs/35333235798",
+  "actor": "AlexisBalayre",
+  "commit_sha": "1a547488b7901a2a7302b4923dc50df16437beec",
+  "source": "pr",
+  "pr_number": 18,
+  "action": "review",
+  "reviewers_spawned": [
+    "conventions",
+    "docs"
+  ],
+  "reviewers_skipped": [
+    "correctness",
+    "security",
+    "context",
+    "maintainability"
+  ],
+  "review_mode": "incremental",
+  "incremental_from_sha": "8858ec302cb37229b3cbad8e535f534afaf6dab2",
+  "prior_importants": [
+    {
+      "file": "CONTRIBUTING.md",
+      "line": "55-60",
+      "status": "resolved"
+    }
+  ],
+  "findings": [
+    {
+      "file": "CONTRIBUTING.md",
+      "line": "18",
+      "area": "docs",
+      "confidence": "high",
+      "tag": "nit",
+      "description": "The 'here...here' ambiguity fix ('any breakage surfaces here before it reaches anyone else') reads correctly, but the edited line is now 122 chars vs. the paragraph's established ~90-100 char hand-wrap (neighboring lines are 91-100 chars), the one line in this paragraph that breaks the file's wrap convention.",
+      "body": null,
+      "suggestion": null
+    }
+  ],
+  "refuted_findings": [],
+  "process_issues": [],
+  "comments_posted_actual": 0,
+  "is_error": false,
+  "cost_usd": 1.2443568500000002,
+  "duration_ms": 293299,
+  "num_turns": 25,
+  "tokens": {
+    "input": 31,
+    "output": 11133,
+    "cache_read": 698784,
+    "cache_creation": 45080,
+    "total": 755028
+  }
+}
