@@ -40,13 +40,24 @@ export function wouldChange(action: Action, root: string): boolean {
       const existing = JSON.parse(readFileSync(target, "utf8")) as Record<string, unknown>;
       return `${JSON.stringify(deepMerge(existing, action.value), null, 2)}\n` !== readFileSync(target, "utf8");
     }
-    case "symlink":
-      return !isLink(target) || readlinkSync(target) !== action.to;
+    case "symlink": {
+      if (isLink(target)) return readlinkSync(target) !== action.to;
+      // A host that cannot symlink gets a copy instead, and a faithful copy is not drift:
+      // --check would otherwise fail forever on the machines that needed the fallback.
+      if (!existsSync(target)) return true;
+      const source = linkSource(target, action.to);
+      return !existsSync(source) || !sameTree(source, target);
+    }
     case "copy":
       return !existsSync(target) || readFileSync(target, "utf8") !== readFileSync(action.from, "utf8");
     case "copy-dir":
       return !existsSync(target) || !sameTree(action.from, target);
   }
+}
+
+/** What a link points at, as an absolute path: link targets are relative to the link's own directory. */
+function linkSource(target: string, to: string): string {
+  return path.resolve(path.dirname(target), to);
 }
 
 function sameTree(from: string, to: string): boolean {
@@ -107,8 +118,16 @@ function applyOne(action: Action, root: string): string {
         if (isLink(target)) unlinkSync(target);
         else return "kept (not a symlink)";
       }
-      symlinkSync(action.to, target);
-      return "linked";
+      try {
+        symlinkSync(action.to, target);
+        return "linked";
+      } catch {
+        // Windows refuses symlinks without Developer Mode or admin rights. Leaving the path
+        // out would make every skill invisible to the tool that reads through it, so the
+        // content is copied and the outcome says which one you got.
+        cpSync(linkSource(target, action.to), target, { recursive: true });
+        return "copied (symlinks unavailable here)";
+      }
     }
 
     case "copy-dir": {
